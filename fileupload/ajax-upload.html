@@ -1,0 +1,130 @@
+<html>
+<head><title>File Upload</title>
+<script type="text/javascript">
+
+var upload_host = 'http://evilcode.net';
+var upload_url = 'upload.php';
+var proxy_url = 'proxy.php?port=';
+var req, areq, port;
+var ie_counter = 0;
+
+function getUploadPort() {
+    if (window.XMLHttpRequest) {
+        req = new XMLHttpRequest();
+        req.open("GET", upload_url, false);
+        ret = req.send(null);
+    } else if (window.ActiveXObject) {
+
+        ie_counter = ie_counter + 1;
+        upload_url = upload_url + '?count=' + ie_counter;
+
+        req = new ActiveXObject("Microsoft.XMLHTTP");
+        if (req) {
+            req.open("GET", upload_url, false);
+            ret = req.send();
+        }
+    }
+
+    port = req.responseText;
+
+    uf = document.getElementById('uploadform');
+    uf.action = upload_host + ':' + port;
+
+    setTimeout('getUploadStatus()', 1000);
+
+    var us = document.getElementById('upload_status');
+    us.innerHTML = 'Initializing Upload';
+}
+
+function getUploadStatus() {
+
+    var url = proxy_url + eval(port);
+
+    if (window.XMLHttpRequest) {
+        areq = new XMLHttpRequest();
+        areq.onreadystatechange = handleUploadStatus;
+        areq.open("GET", url, true);
+        areq.send(null);
+    } else if (window.ActiveXObject) {
+
+        ie_counter = ie_counter + 1;
+        url = url + '&count=' + ie_counter;
+
+        areq = new ActiveXObject("Microsoft.XMLHTTP");
+        if (areq) {
+            areq.onreadystatechange = handleUploadStatus;
+            areq.open("GET", url, true);
+            areq.send();
+        }
+    }
+}
+
+function handleUploadStatus() {
+    if (areq.readyState == 4) {
+        if (areq.status == 200) {
+
+            var status = areq.responseText;
+            if (status == '') {
+                setTimeout('getUploadStatus()', 1000);
+                return;
+            }
+
+            var split_status = status.split(',');
+            var complete = split_status[2];
+
+            var us = document.getElementById('upload_status');
+            us.innerHTML = complete + '%';
+
+            var up = document.getElementById('upload_progress');
+            up.style.width = eval(complete*3.5) + 'px';
+
+            complete_int = parseInt(complete);
+            if (complete_int < 100)
+                setTimeout('getUploadStatus()', 1000);
+
+        } else {
+            alert("Error" + areq.responseText);
+            setTimeout('getUploadStatus()', 1000);
+        }
+    }
+}
+
+</script>
+<style type="text/css">
+
+#upload_container {
+  width: 350px;
+  height: 25px;
+  background-color: #000;
+}
+
+#upload_status {
+  position: absolute;
+  width: 350px;
+  color: #29f214;
+  font-size: 16px;
+  text-align: center;
+  z-index: 99;
+}
+
+#upload_progress {
+  position: absolute;
+  height: 25px;
+  width: 0px;
+  background-color: #bbb;
+}
+
+</style>
+</head>
+<body>
+
+<div id="upload_container"><div id="upload_status">Upload Not Started</div><div id="upload_progress"></div></div>
+
+<br />
+<form id="uploadform" action="upload.php" method="post" enctype="multipart/form-data" accept-charset="UTF-8">
+<input type="file" name="file1" value=""/>
+<input type="submit" name="submit" value="Upload" onclick="javascript:getUploadPort();" />
+</form>
+
+</body>
+</html>

@@ -1,18 +1,48 @@
-#!/usr/local/bin/php
 <?php
 
-require_once('clienthandler.php');
-require_once('socketserver.php');
-require_once('mfdparser.php');
+/*
+Copyright (C) 2006-2007 Samuel J. Greear. All rights reserved.
 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+*/
+
+require('clienthandler.php');
+require('socketserver.php');
+require('mfdparser.php');
+
+$RequestBytesRead = 0;
+$ContentLength = 0;
+global $RequestBytesRead, $ContentLength;
 
 class MiniHTTPD extends ClientHandler {
 
     public $Request;
+    public $RequestSplit;
     public $RequestHeaders;
     public $RequestBytesRead;
 
     public $POSTBody;
+
+    private $Callback;
 
     private $ContentLength;
     private $ContentType;
@@ -22,24 +52,31 @@ class MiniHTTPD extends ClientHandler {
     const REQUEST_TYPE_GET = 2;
     const REQUEST_TYPE_HEAD = 3;
 
-    public function __construct($socket) {
+    public function __construct($socket, $opts) {
         parent::__construct($socket);
         $this->Terminator = "\r\n\r\n";
 
+        $this->Callback = $opts;
+
         $this->Request = NULL;
+        $this->RequestSplit = NULL;
+        $this->RequestHeaders = array();
         $this->RequestBytesRead = 0;
+
+        $this->ContentLength = 0;
+        $this->ContentType = NULL;
+        $this->MIMEBoundary = NULL;
     }
 
     public function FoundTerminator() {
-//print $this->InputData;
         $data = $this->ReduceInput();
-
-//        print 'Found Terminator: ' . $this->Terminator . ' - Total Bytes Read: ' . $this->InputBytesRead . "\n";
 
         if ($this->Request === NULL) {
             $this->ParseRequest($data);
             if ($this->RequestType == MiniHTTPD::REQUEST_TYPE_POST) {
                 $this->ContentLength = (int)$this->RequestHeaders['content-length'];
+                global $ContentLength;
+                $ContentLength = $this->ContentLength;
 
                 $search_str = '; boundary=';
                 $search_str_off = strpos($this->RequestHeaders['content-type'], $search_str);
@@ -54,27 +91,43 @@ class MiniHTTPD extends ClientHandler {
 
                 $this->Terminator = NULL;
                 $this->MFDParser = new MFDParser($this->ContentLength, $this->MIMEBoundary);
+                return;
             }
-            return;
         }
 
           // All requests of type POST are an incoming file transfer
         if ($this->RequestType == MiniHTTPD::REQUEST_TYPE_POST) {
-            $bytes_consumed = $this->MFDParser->Consume($data);
-//print 'Bytes Consumed: ' . $bytes_consumed . "\n";
-//print 'Content Length: ' . $this->ContentLength . "\n";
+            $this->RequestBytesRead = $this->MFDParser->Consume($data);
+            global $RequestBytesRead;
+            $RequestBytesRead = $this->RequestBytesRead;
 
-$this->Write('Bytes Consumed: ' . $bytes_consumed . "\n");
-
-            if ($bytes_consumed >= $this->ContentLength) {
-                $this->Write("\r\n\r\n");
+            if ($this->RequestBytesRead >= $this->ContentLength) {
+                $this->Write("HTTP/1.1 200 OK\r\n\r\n");
+                call_user_func($this->Callback, $this->MFDParser->POST, $this->MFDParser->FILES, $this);
                 $this->LingeringClose = true;
             }
         }
 
-          // All requests of type GET want to know the status of the transfer
+          // All requests of type GET are assumed to want to know the status of the transfer
         if ($this->RequestType == MiniHTTPD::REQUEST_TYPE_GET) {
-            $this->Write('STATUS OF THE UPLOAD IS BLA!');
+
+            if ($this->RequestSplit[1] == '/favicon.ico') {
+//                print "Request for favicon\n";
+                $this->Write("HTTP/1.1 404 File not found\r\n");
+            } else {
+//                print "Request for status\n";
+                global $ContentLength, $RequestBytesRead;
+
+                if ($ContentLength === 0)
+                    $percent_transferred = 0;
+                else
+                    $percent_transferred = round(((float)$RequestBytesRead/$ContentLength)*100);
+
+                $this->Write("HTTP/1.1 200 OK\r\n\r\n");
+                $this->Write($RequestBytesRead . ',' . $ContentLength .
+                             ',' . $percent_transferred . "\r\n");
+            }
+
             $this->Write("\r\n\r\n");
             $this->LingeringClose = true;
         }
@@ -93,16 +146,17 @@ $this->Write('Bytes Consumed: ' . $bytes_consumed . "\n");
         $this->Request = $data;
 
         $lines = explode("\r\n", $data);
-        if (sizeof($lines) < 2)
+        if (sizeof($lines) < 1)
             throw new SocketException('This does not appear to be a valid HTTP request');
 
         $first_line = array_shift($lines);
-        $first_line_exploded = explode(' ', $first_line);
-        if ($first_line_exploded[0] == 'POST')
+        $this->RequestSplit = explode(' ', $first_line);
+
+        if ($this->RequestSplit[0] == 'POST')
             $this->RequestType = MiniHTTPD::REQUEST_TYPE_POST;
-        elseif ($first_line_exploded == 'GET')
+        elseif ($this->RequestSplit[0] == 'GET')
             $this->RequestType = MiniHTTPD::REQUEST_TYPE_GET;
-        elseif ($first_line_exploded == 'HEAD')
+        elseif ($this->RequestSplit[0] == 'HEAD')
             $this->RequestType = MiniHTTPD::REQUEST_TYPE_HEAD;
         else
             throw new SocketException('This does not appear to be a valid HTTP request');
@@ -134,10 +188,5 @@ $this->Write('Bytes Consumed: ' . $bytes_consumed . "\n");
         return $data;
     }
 }
-
-$ss = new SocketServer();
-$ss->SetHandler('MiniHTTPD');
-$ss->Setup('127.0.0.1', 54321);
-$ss->Run();
 
 ?>

