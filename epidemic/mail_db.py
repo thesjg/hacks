@@ -3,9 +3,10 @@
 from backend import sql
 from mail import db
 
-#dispatch = sql.SQLNotifyBootstrap('mail', 'sjg', 'sjg')
-dispatch = sql.SQLNotifyDispatch('mail', 'sjg', 'sjg')
-maindb = sql.SQL('sjg', 'sjg')
+dispatch = sql.SQLNotifyBootstrap('mail', 'evilserve', 'SJG')
+#dispatch = sql.SQLNotifyDispatch('mail', 'evilserve', 'SJG')
+maindb = dispatch
+#maindb = sql.SQL('sjg', 'sjg')
 dbmanage = sql.SQLManage()
 
 result = dispatch.Query("""SELECT DISTINCT on (server_id) server_id, username,
@@ -36,5 +37,5 @@ dispatch.Register('dns_resources', dr)
 dispatch.Register('mail_users', mu)
 dispatch.Register('mail_aliases', ma)
 
-#dispatch.Bootstrap()
-dispatch.Dispatch()
+dispatch.Bootstrap()
+#dispatch.Dispatch()

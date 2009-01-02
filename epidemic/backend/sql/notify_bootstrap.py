@@ -1,3 +1,5 @@
+from notify import *
+
 class SQLNotifyBootstrap(SQLNotify):
 
     SchemaName    = 'epidemic'

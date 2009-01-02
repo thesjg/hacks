@@ -1,3 +1,5 @@
+from sql import *
+
 class SQLNotify(SQL):
 
     Name = None

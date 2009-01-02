@@ -1,3 +1,6 @@
+from notify import *
+from select import *
+
 class SQLNotifyDispatch(SQLNotify):
 
     Poll = None

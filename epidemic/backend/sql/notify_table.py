@@ -15,6 +15,12 @@ class SQLNotifyTable:
     def GetCols(self):
         return []
 
+    def Query(self, query, server_id=None):
+        if (server_id != None)
+            return self.ServerDB.Query(server_id, query)
+        else
+            return self.DB.Query(query)
+
     def INSERT(self, row_id, new_dict):
         pass
 
