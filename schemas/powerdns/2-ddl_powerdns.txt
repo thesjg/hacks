@@ -1,0 +1,52 @@
+-- Create powerdns role
+
+CREATE SCHEMA powerdns AUTHORIZATION powerdns;
+SET search_path TO powerdns,public;
+
+-- PostgreSQL 8.3
+
+CREATE TYPE record_type AS ENUM ('A', 'AAAA', 'AFSDB', 'CERT', 'CNAME',
+    'DNSKEY', 'DS', 'HINFO', 'KEY', 'LOC', 'MX', 'NAPTR', 'NS', 'NSEC', 'PTR',
+    'RP', 'RRSIG', 'SOA', 'SPF', 'SSHFP', 'SRV', 'TXT');
+
+CREATE TYPE domain_type AS ENUM ('NATIVE', 'MASTER', 'SLAVE',
+    'SUPERSLAVE');
+
+-- PostgreSQL 8.2
+
+-- CREATE DOMAIN record_type AS VARCHAR(5) CHECK (VALUE IN
+--     ('A', 'AAAA', 'CNAME', 'HINFO', 'MX', 'NAPTR', 'NS',
+--      'PTR', 'RP', 'SOA', 'SRV', 'TXT'));
+
+-- CREATE DOMAIN domain_type AS VARCHAR(10) CHECK (VALUE IN
+--     ('NATIVE', 'MASTER', 'SLAVE', 'SUPERSLAVE'));
+
+CREATE TABLE domains (
+  id                 INT8 PRIMARY KEY,
+  name               VARCHAR(255) UNIQUE NOT NULL,
+  master             VARCHAR(255) DEFAULT NULL,
+  last_check         INT DEFAULT NULL,
+  type               DOMAIN_TYPE NOT NULL,
+  notified_serial    INT DEFAULT NULL,
+  account            VARCHAR(40) DEFAULT NULL
+);
+
+CREATE TABLE records (
+  id                 SERIAL8 PRIMARY KEY,
+  domain_id          INT8 NOT NULL REFERENCES domains ON DELETE CASCADE,
+  name               VARCHAR(255) NOT NULL,
+  type               RECORD_TYPE NOT NULL,
+  content            VARCHAR(255) NOT NULL,
+  ttl                INT DEFAULT NULL,
+  prio               INT DEFAULT NULL,
+  change_date        INT DEFAULT NULL,
+  ref_id             INT8 DEFAULT NULL
+);
+CREATE INDEX records_name_index ON records (name);
+CREATE INDEX records_name_type_index ON records (name, type);
+CREATE INDEX records_domain_id_index ON records (domain_id);
+
+SET search_path TO "$user",public;
+
+-- GRANT ALL PRIVILEGES ON powerdns.domains TO powerdns;
+-- GRANT ALL PRIVILEGES ON powerdns.records TO powerdns;

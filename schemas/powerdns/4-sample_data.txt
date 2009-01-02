@@ -1,0 +1,74 @@
+INSERT INTO dns_zones (origin, ns, mbox) VALUES ('evilcode.net', 'ns.evilcode.net', 'dns.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (1, 1, '', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (1, 1, '*', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (1, 1, 'ns0', '72.232.239.131');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (1, 1, 'ns1', '72.232.228.26');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (1, 1, 'mail', '');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data, aux) VALUES (1, 5, '', 'mail.evilcode.net', 1);
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (1, 6, '', 'ns0.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (1, 6, '', 'ns1.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (1, 9, '', 'v=spf1 mx:mail.evilcode.net -all');
+
+INSERT INTO dns_zones (origin, ns, mbox) VALUES ('thesjg.com', 'ns.evilcode.net', 'dns.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (2, 1, '', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (2, 1, '*', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (2, 6, '', 'ns0.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (2, 6, '', 'ns1.evilcode.net');
+
+INSERT INTO dns_zones (origin, ns, mbox) VALUES ('thesjg.net', 'ns.evilcode.net', 'dns.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (3, 1, '', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (3, 1, '*', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (3, 6, '', 'ns0.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (3, 6, '', 'ns1.evilcode.net');
+
+INSERT INTO dns_zones (origin, ns, mbox) VALUES ('thesjg.org', 'ns.evilcode.net', 'dns.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (4, 1, '', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (4, 1, '*', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (4, 6, '', 'ns0.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (4, 6, '', 'ns1.evilcode.net');
+
+INSERT INTO dns_zones (origin, ns, mbox) VALUES ('mindlessracing.com', 'ns.evilcode.net', 'dns.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (5, 1, '', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (5, 1, '*', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (5, 6, '', 'ns0.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (5, 6, '', 'ns1.evilcode.net');
+
+INSERT INTO dns_zones (origin, ns, mbox) VALUES ('mindlessracing.net', 'ns.evilcode.net', 'dns.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (6, 1, '', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (6, 1, '*', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (6, 6, '', 'ns0.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (6, 6, '', 'ns1.evilcode.net');
+
+INSERT INTO dns_zones (origin, ns, mbox) VALUES ('mindlessracing.org', 'ns.evilcode.net', 'dns.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (7, 1, '', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (7, 1, '*', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (7, 6, '', 'ns0.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (7, 6, '', 'ns1.evilcode.net');
+
+INSERT INTO dns_zones (origin, ns, mbox) VALUES ('bitbum.com', 'ns.evilcode.net', 'dns.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (8, 1, '', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (8, 1, '*', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (8, 6, '', 'ns0.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (8, 6, '', 'ns1.evilcode.net');
+
+INSERT INTO dns_zones (origin, ns, mbox) VALUES ('bitbum.net', 'ns.evilcode.net', 'dns.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (9, 1, '', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (9, 1, '*', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (9, 6, '', 'ns0.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (9, 6, '', 'ns1.evilcode.net');
+
+INSERT INTO dns_zones (origin, ns, mbox) VALUES ('bitbum.org', 'ns.evilcode.net', 'dns.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (10, 1, '', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (10, 1, '*', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (10, 6, '', 'ns0.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (10, 6, '', 'ns1.evilcode.net');
+
+INSERT INTO dns_zones (origin, ns, mbox) VALUES ('flixn.com', 'ns.evilcode.net', 'dns.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (11, 1, '', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (11, 1, '*', '72.232.239.133');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (11, 1, 'fms01', '72.232.239.130');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (11, 1, 'fms02', '72.232.228.26');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (11, 1, 'media', '72.232.228.26');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (11, 6, '', 'ns0.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data) VALUES (11, 6, '', 'ns1.evilcode.net');
+INSERT INTO dns_resources (dns_zone_id, dns_resource_type_id, name, data, aux) VALUES (11, 5, '', 'smtp15.msoutlookonline.net', 1);

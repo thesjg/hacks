@@ -1,0 +1,146 @@
+-- -- -- -- -- --
+--
+-- Dependancies
+--
+-- -- -- -- -- --
+CREATE OR REPLACE FUNCTION concat_hosts_func(text, text) RETURNS text AS $$
+  DECLARE
+  BEGIN
+    IF ($1 = '' OR $1 IS NULL) THEN
+      RETURN $2;
+    END IF;
+    RETURN ($1 || '.' || $2);
+  END;
+$$ LANGUAGE plpgsql;
+
+
+-- -- -- -- -- --
+--
+-- Functions/Triggers to keep our serial's incrementing
+--
+-- -- -- -- -- --
+CREATE OR REPLACE FUNCTION dns_zones_update_increment_serial_func () RETURNS TRIGGER AS $$
+  DECLARE
+  BEGIN
+    IF (NEW.serial <= OLD.serial) THEN
+      NEW.serial := OLD.serial + 1;
+    END IF;
+    RETURN NEW;
+  END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION dns_resources_increment_dns_zones_serial_func () RETURNS TRIGGER AS $$
+  DECLARE
+  BEGIN
+    IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') THEN
+      UPDATE dns_zones SET serial=serial+1 WHERE id=NEW.dns_zone_id;
+      RETURN NEW;
+    ELSIF (TG_OP = 'DELETE') THEN
+      UPDATE dns_zones SET serial=serial+1 WHERE id=OLD.dns_zone_id;
+      RETURN OLD;
+    END IF;
+    RETURN NULL;
+  END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER dns_zones_update_increment_serial_trigger
+  BEFORE UPDATE ON dns_zones
+  FOR EACH ROW EXECUTE PROCEDURE
+    dns_zones_update_increment_serial_func();
+
+CREATE TRIGGER dns_resources_increment_dns_zones_serial_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON dns_resources
+  FOR EACH ROW EXECUTE PROCEDURE
+    dns_resources_increment_dns_zones_serial_func();
+
+
+-- -- -- -- -- --
+--
+-- Functions/Triggers to make our PowerDNS tables function as serialized views
+--
+-- -- -- -- -- --
+CREATE OR REPLACE FUNCTION dns_zones_powerdns_func () RETURNS TRIGGER AS $$
+  DECLARE
+  BEGIN
+    IF (TG_OP = 'INSERT') THEN
+      INSERT INTO powerdns.domains (id, name, type) VALUES (NEW.id, NEW.origin, 'MASTER');
+      INSERT INTO powerdns.records (domain_id, name, type, content, ttl) VALUES (NEW.id, NEW.origin, 'SOA',
+        (NEW.ns || ' ' || NEW.mbox || ' ' || NEW.serial || ' ' || NEW.refresh || ' ' ||
+        NEW.retry || ' ' || NEW.expire || ' ' || NEW.ttl), NEW.ttl);
+      RETURN NEW;
+    ELSIF (TG_OP = 'UPDATE') THEN
+      IF (NEW.origin <> OLD.origin) THEN
+        UPDATE powerdns.domains SET name=NEW.origin WHERE id=NEW.id;
+        UPDATE powerdns.records SET name=NEW.origin WHERE domain_id=NEW.id AND type='SOA';
+      END IF;
+
+      IF (NEW.ns <> OLD.ns OR
+          NEW.mbox <> OLD.mbox OR
+          NEW.serial <> OLD.serial OR
+          NEW.refresh <> OLD.refresh OR
+          NEW.retry <> OLD.retry OR
+          NEW.expire <> OLD.expire OR
+          NEW.ttl <> OLD.ttl) THEN
+        UPDATE powerdns.records SET content=(NEW.ns || ' ' ||
+            NEW.mbox || ' ' || NEW.serial || ' ' || NEW.refresh || ' ' ||
+            NEW.retry || ' ' || NEW.expire || ' ' || NEW.ttl),
+            ttl=NEW.ttl
+          WHERE domain_id=NEW.id AND type='SOA';
+      END IF;
+      RETURN NEW;
+    ELSIF (TG_OP = 'DELETE') THEN
+      DELETE FROM powerdns.domains WHERE id=OLD.id;
+      RETURN OLD;
+    END IF;
+    RETURN NULL;
+  END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION dns_resources_powerdns_func () RETURNS TRIGGER AS $$
+  DECLARE
+    origin_l VARCHAR(255);
+-- PostgreSQL 8.3
+    type_l powerdns.RECORD_TYPE;
+-- PostgreSQL 8.2
+--     type_l VARCHAR(5);
+    ttl_l INT4;
+  BEGIN
+    IF (TG_OP = 'DELETE') THEN
+      DELETE FROM powerdns.records WHERE ref_id=OLD.id;
+      RETURN OLD;
+    END IF;
+
+    IF (NEW.ttl IS NULL) THEN
+      SELECT ttl INTO ttl_l FROM dns_zones WHERE id=NEW.dns_zone_id;
+    ELSE
+      ttl_l := NEW.ttl;
+    END IF;
+
+    IF (TG_OP = 'INSERT') THEN
+      SELECT origin INTO origin_l FROM dns_zones WHERE id=NEW.dns_zone_id;
+      SELECT type INTO type_l FROM dns_resource_types WHERE id=NEW.dns_resource_type_id;
+      INSERT INTO powerdns.records (domain_id, name, type, content, ttl, prio, ref_id) VALUES
+        (NEW.dns_zone_id, concat_hosts_func(NEW.name, origin_l), type_l,
+         NEW.data, ttl_l, NEW.aux, NEW.id);
+      RETURN NEW;
+    ELSIF (TG_OP = 'UPDATE') THEN
+      SELECT origin INTO origin_l FROM dns_zones WHERE id=NEW.dns_zone_id;
+      SELECT type INTO type_l FROM dns_resource_types WHERE id=NEW.dns_resource_type_id;
+      UPDATE powerdns.records SET domain_id=NEW.dns_zone_id,
+        name=concat_hosts_func(NEW.name, origin_l), type=type_l,
+        content=NEW.data, ttl=ttl_l, prio=NEW.aux WHERE ref_id=NEW.id;
+      RETURN NEW;
+    END IF;
+    RETURN NULL;
+  END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER dns_zones_powerdns_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON dns_zones
+  FOR EACH ROW EXECUTE PROCEDURE
+    dns_zones_powerdns_func();
+
+CREATE TRIGGER dns_resources_powerdns_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON dns_resources
+  FOR EACH ROW EXECUTE PROCEDURE
+    dns_resources_powerdns_func();
