@@ -1,0 +1,19 @@
+No compilation instructions, should "just work" on any FreeBSD 4.x
+or 5.x box.  Usage is similar to jail(8), for jail setup instructions
+read that manpage as well as jail(2).
+
+The last argument to jailinit is the IP you want to allow connections
+from.  You can connect from this IP to give jailinit commands, try
+'help'.  Omitting this argument will cause jailinit to forget that it's
+capable of playing with sockets. If jailinit is allowing connections
+it opens port 1 on the ip used for the jail.
+
+To kill a jail send jailinit the TERM signal, to restart a jail send it
+a HUP.
+
+Jailinit was designed to work with a process that monitors and keeps
+track of jails, jailproc, but will work without.  Jailproc is not yet
+implemented.
+
+
+TODO: Just about everything.
