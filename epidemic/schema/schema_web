@@ -1,0 +1,22 @@
+CREATE DOMAIN state AS VARCHAR(8) CHECK (VALUE IN ('ACTIVE', 'INACTIVE'));
+
+CREATE TABLE web_config (
+  fsroot             VARCHAR(255) NOT NULL);
+
+CREATE TABLE web_user (
+  gid                INT8 PRIMARY KEY,
+  dba                VARCHAR(255) NOT NULL,
+  username           VARCHAR(255) NOT NULL,
+  quota_bytes        INT8 NOT NULL,
+  state              STATE NOT NULL);
+
+CREATE TABLE web_site (
+  id                 SERIAL8 PRIMARY KEY,
+  uid                INT8 NOT NULL,
+  hostname           VARCHAR(255) NOT NULL,
+  serveradmin        VARCHAR(255) NOT NULL,
+  quota_bytes        INT8 NOT NULL);
+
+CREATE TABLE web_alias (
+  web_site_id        INT8 PRIMARY KEY,
+  hostname           VARCHAR(255) NOT NULL);

@@ -1,0 +1,31 @@
+CREATE DOMAIN state AS VARCHAR(8) CHECK (VALUE IN ('ACTIVE', 'INACTIVE'));
+
+CREATE TABLE mail_config (
+  fsroot             VARCHAR(255) NOT NULL);
+
+CREATE TABLE mail_users (
+  gid                INT8 PRIMARY KEY,
+  dba                VARCHAR(255) NOT NULL,
+  username           VARCHAR(255) NOT NULL,
+  quota_bytes        INT8 NOT NULL,
+  state              STATE NOT NULL DEFAULT 'ACTIVE');
+
+CREATE TABLE mail_accounts (
+  uid                INT8 NOT NULL,
+  username           VARCHAR(255) PRIMARY KEY,
+  password           VARCHAR(255) NOT NULL,
+  name               VARCHAR(255) NOT NULL,
+  path               VARCHAR(255) NOT NULL,
+  spam_thrsh         INT4 NOT NULL,
+  quota_bytes        INT8 NOT NULL,
+  state              STATE NOT NULL DEFAULT 'ACTIVE');
+
+CREATE TABLE mail_aliases (
+  address            VARCHAR(255) PRIMARY KEY,
+  destination        VARCHAR(255) NOT NULL);
+
+CREATE TABLE mail_local_domains (
+  hostname           VARCHAR(255) PRIMARY KEY);
+
+CREATE TABLE mail_relay_domains (
+  hostname           VARCHAR(255) PRIMARY KEY);

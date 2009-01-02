@@ -1,0 +1,185 @@
+CREATE DOMAIN state AS VARCHAR(8) CHECK (VALUE IN ('ACTIVE', 'INACTIVE'));
+CREATE DOMAIN dns_resource_type AS VARCHAR(5) CHECK (VALUE IN ('A', 'AAAA', 'CNAME', 'HINFO', 'MX',
+                                                               'NS', 'PTR', 'SRV', 'TXT'));
+CREATE DOMAIN money AS DECIMAL(7,2);
+
+
+CREATE TABLE dba (
+  id                 SERIAL8 PRIMARY KEY,
+  name               VARCHAR(255) NOT NULL);
+
+CREATE TABLE users (
+  id                 SERIAL8 PRIMARY KEY,
+  dba_id             INT8 NOT NULL REFERENCES dba ON UPDATE CASCADE,
+  name               VARCHAR(255) NOT NULL,
+  username           VARCHAR(255) UNIQUE NOT NULL,
+  password           VARCHAR(255) NOT NULL,
+  date               TIMESTAMP NOT NULL DEFAULT NOW());
+
+CREATE TABLE dns_zones (
+  id                 SERIAL8 PRIMARY KEY,
+  user_id            INT8 NOT NULL REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE,
+  origin             VARCHAR(255) UNIQUE NOT NULL,
+  ns                 VARCHAR(255) NOT NULL,
+  mbox               VARCHAR(255) NOT NULL,
+  serial             INT8 NOT NULL DEFAULT '1',
+  refresh            INT4 NOT NULL DEFAULT '28800',
+  retry              INT4 NOT NULL DEFAULT '7200',
+  expire             INT4 NOT NULL DEFAULT '604800',
+  minimum            INT4 NOT NULL DEFAULT '86400',
+  ttl                INT4 NOT NULL DEFAULT '86400',
+  profile            BOOLEAN NOT NULL DEFAULT 'FALSE');
+
+CREATE TABLE dns_resources (
+  id                 SERIAL8 PRIMARY KEY,
+  dns_zone_id        INT8 NOT NULL REFERENCES dns_zones ON DELETE CASCADE ON UPDATE CASCADE,
+  name               VARCHAR(64) NOT NULL,
+  type               DNS_RESOURCE_TYPE NOT NULL,
+  data               VARCHAR(128) NOT NULL,
+  aux                INT4 NOT NULL DEFAULT '0',
+  ttl                INT4 NOT NULL DEFAULT '86400');
+
+CREATE TABLE server_types (
+  id                 SERIAL8 PRIMARY KEY,
+  type               VARCHAR(255) NOT NULL);
+
+CREATE TABLE server_ips (
+  id                 SERIAL8 PRIMARY KEY,
+  address            INET NOT NULL);
+
+CREATE TABLE servers (
+  id                 SERIAL8 PRIMARY KEY,
+  name               VARCHAR(255) NOT NULL,
+  server_ip_id       INT8 NOT NULL REFERENCES server_ips ON UPDATE CASCADE,
+  server_type_id     INT8 NOT NULL REFERENCES server_types ON UPDATE CASCADE,
+  dns_resource_id    INT8 NOT NULL REFERENCES dns_resources ON DELETE CASCADE ON UPDATE CASCADE);
+
+CREATE TABLE server_config (
+  id                 SERIAL8 PRIMARY KEY,
+  server_id          INT8 NOT NULL REFERENCES servers ON UPDATE CASCADE ON DELETE CASCADE,
+  fsroot             VARCHAR(255) NOT NULL,
+  min_uid            INT4 NOT NULL,
+  max_uid            INT4 NOT NULL,
+  min_gid            INT4 NOT NULL,
+  max_gid            INT4 NOT NULL);
+
+CREATE TABLE server_db_logins (
+  id                 SERIAL8 PRIMARY KEY,
+  server_id          INT8 NOT NULL REFERENCES servers ON UPDATE CASCADE ON DELETE CASCADE,
+  username           VARCHAR(255) NOT NULL,
+  password           VARCHAR(255) NOT NULL,
+  database           VARCHAR(255) NOT NULL);
+
+CREATE TABLE user_servers (
+  id                 SERIAL8 PRIMARY KEY,
+  user_id            INT8 NOT NULL REFERENCES users ON UPDATE CASCADE ON DELETE CASCADE,
+  server_id          INT8 NOT NULL REFERENCES servers ON UPDATE CASCADE);
+
+CREATE TABLE user_server_quota (
+  id                 SERIAL8 PRIMARY KEY,
+  user_id            INT8 NOT NULL REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE,
+  service_type_id    INT8 NOT NULL REFERENCES service_types ON UPDATE CASCADE,
+  quota_bytes        INT8 NOT NULL);
+
+CREATE TABLE mail_users (
+  id                 SERIAL8 PRIMARY KEY,
+  user_id            INT8 NOT NULL REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE,
+  dns_resource_id    INT8 NOT NULL REFERENCES dns_resources ON DELETE CASCADE ON UPDATE CASCADE,
+  name               VARCHAR(255) NOT NULL,
+  username           VARCHAR(255) NOT NULL,
+  password           VARCHAR(255) NOT NULL,
+  quota_bytes        INT8 NOT NULL,
+  spam_thrsh         INT4 NOT NULL DEFAULT '5' CHECK (spam_thrsh >= 0 AND spam_thrsh <= 10));
+
+CREATE TABLE mail_aliases (
+  id                 SERIAL8 PRIMARY KEY,
+  user_id            INT8 NOT NULL REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE,
+  dns_resource_id    INT8 NOT NULL REFERENCES dns_resources ON DELETE CASCADE ON UPDATE CASCADE,
+  username           VARCHAR(255) NOT NULL,
+  destination        VARCHAR(255) NOT NULL);
+
+CREATE TABLE web_sites (
+  id                 SERIAL8 PRIMARY KEY,
+  user_id            INT8 NOT NULL REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE,
+  dns_resource_id    INT8 NOT NULL REFERENCES dns_resources ON DELETE CASCADE ON UPDATE CASCADE,
+  serveradmin        VARCHAR(255) NOT NULL,
+  quota_bytes        INT8 NOT NULL);
+
+CREATE TABLE web_aliases (
+  id                 SERIAL8 PRIMARY KEY,
+  web_site_id        INT8 NOT NULL REFERENCES web_sites ON DELETE CASCADE ON UPDATE CASCADE,
+  dns_resource_id    INT8 NOT NULL REFERENCES dns_resources ON DELETE CASCADE ON UPDATE CASCADE);
+
+CREATE TABLE limit_types (
+  id                 SERIAL8 PRIMARY KEY,
+  name               VARCHAR(255) UNIQUE NOT NULL,
+  description        TEXT);
+
+CREATE TABLE limits (
+  id                 SERIAL8 PRIMARY KEY,
+  limit_type_id      INT8 NOT NULL REFERENCES limit_types ON UPDATE CASCADE,
+  description        TEXT,
+  volume             INT8 NOT NULL DEFAULT '0');
+
+CREATE TABLE service_types (
+  id                 SERIAL8 PRIMARY KEY,
+  name               VARCHAR(255) UNIQUE NOT NULL);
+
+CREATE TABLE services (
+  id                 SERIAL8 PRIMARY KEY,
+  service_type_id    INT8 NOT NULL REFERENCES service_types ON UPDATE CASCADE,
+  dba_id             INT8 NOT NULL REFERENCES dba ON UPDATE CASCADE,
+  name               VARCHAR(255) NOT NULL,
+  description        TEXT,
+  maximum_use        INT4 DEFAULT 'NULL');
+
+CREATE TABLE service_rates (
+  id                 SERIAL8 PRIMARY KEY,
+  service_id         INT8 NOT NULL REFERENCES services ON DELETE CASCADE ON UPDATE CASCADE,
+  min_volume         INT4 NOT NULL,
+  max_volume         INT4 NOT NULL,
+  price_unit         MONEY NOT NULL);
+
+CREATE TABLE service_limits (
+  id                 SERIAL8 PRIMARY KEY,
+  service_id         INT8 NOT NULL REFERENCES services ON DELETE CASCADE ON UPDATE CASCADE,
+  limit_id           INT8 NOT NULL REFERENCES limits ON DELETE CASCADE ON UPDATE CASCADE);
+
+CREATE TABLE packages (
+  id                 SERIAL8 PRIMARY KEY,
+  dba_id             INT8 NOT NULL REFERENCES dba ON UPDATE CASCADE,
+  name               VARCHAR(255) NOT NULL,
+  description        TEXT,
+  price              MONEY NOT NULL,
+  global             BOOLEAN NOT NULL DEFAULT 'TRUE');
+
+CREATE TABLE package_services (
+  id                 SERIAL8 PRIMARY KEY,
+  package_id         INT8 NOT NULL REFERENCES packages ON DELETE CASCADE ON UPDATE CASCADE,
+  service_type_id    INT8 NOT NULL REFERENCES service_types ON UPDATE CASCADE,
+  service_quantity   INT8 NOT NULL);
+
+CREATE TABLE package_users (
+  id                 SERIAL8 PRIMARY KEY,
+  package_id         INT8 NOT NULL REFERENCES packages ON DELETE CASCADE ON UPDATE CASCADE,
+  user_id            INT8 NOT NULL REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE);
+
+CREATE TABLE mail_uid_trans (
+  uid                INT8 NOT NULL,
+  server_uid         INT4 NOT NULL,
+  server_id          INT8 NOT NULL REFERENCES servers);
+
+CREATE TABLE mail_gid_trans (
+  user_id            INT8 PRIMARY KEY REFERENCES users,
+  server_gid         INT4 NOT NULL,
+  server_id          INT8 NOT NULL REFERENCES servers);
+
+CREATE TABLE web_uid_trans (
+  uid                INT8 NOT NULL,
+  server_uid         INT4 NOT NULL,
+  server_id          INT8 NOT NULL REFERENCES servers);
+
+CREATE TABLE web_gid_trans (
+  user_id            INT8 PRIMARY KEY REFERENCES users,
+  server_gid         INT4 NOT NULL,
+  server_id          INT8 NOT NULL REFERENCES servers);

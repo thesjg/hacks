@@ -1,0 +1,6 @@
+1984a1985
+>     PQconsumeInput(self->pgconn);
+1990c1991
+< 	    PQfreeNotify(notify);
+---
+>         PQfreemem(notify);
