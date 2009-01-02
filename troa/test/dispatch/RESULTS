@@ -1,0 +1,91 @@
+hw.model: Intel(R) Core(TM)2 Duo CPU     T5450  @ 1.66GHz
+GCC 4.1.2 -O2
+
+nodispatch
+      128.63 real       120.98 user         0.00 sys
+nodispatch (inline)
+        0.66 real         0.60 user         0.00 sys
+base
+      128.26 real       121.34 user         0.00 sys
+goto
+       87.49 real        80.96 user         0.00 sys
+modified goto
+       85.65 real        81.19 user         0.00 sys
+modified goto 1
+       86.49 real        81.25 user         0.00 sys
+goto direct
+       81.70 real        75.68 user         0.00 sys
+modified goto 2
+       98.82 real        92.89 user         0.00 sys
+switch
+      221.91 real       204.19 user         0.00 sys
+direct (stack exploder)
+      145.97 real       132.83 user         0.00 sys
+modified direct (stack exploder)
+      140.73 real       127.02 user         0.00 sys
+function pointer
+      397.82 real       363.19 user         0.00 sys
+modified function pointer
+      396.62 real       359.66 user         0.00 sys
+
+
+hw.model: Intel(R) Xeon(R) CPU           X3220  @ 2.40GHz
+AMD64 GCC 4.2.1 -O2
+
+nodispatch
+       56.90 real        56.90 user         0.00 sys
+nodispatch (inline)
+        0.41 real         0.41 user         0.00 sys
+base
+       56.88 real        56.88 user         0.00 sys
+goto
+       90.80 real        90.78 user         0.00 sys
+modified goto
+       91.38 real        91.37 user         0.00 sys
+modified goto 1
+       90.32 real        90.31 user         0.00 sys
+goto direct
+       56.38 real        56.38 user         0.00 sys
+modified goto 2
+       74.43 real        74.42 user         0.00 sys
+switch
+      128.47 real       128.47 user         0.00 sys
+direct (stack exploder)
+      112.48 real       112.46 user         0.00 sys
+modified direct (stack exploder)
+      114.85 real       114.84 user         0.00 sys
+function pointer
+      289.24 real       289.23 user         0.00 sys
+modified function pointer
+      291.46 real       291.45 user         0.00 sys
+
+
+hw.model: AMD Athlon(tm) XP 2500+
+GCC 3.4.6 -O2
+
+nodispatch
+      336.18 real       335.52 user         0.00 sys
+nodispatch (inline)
+        0.04 real         0.04 user         0.00 sys
+base
+      336.22 real       335.53 user         0.00 sys
+goto
+      301.71 real       301.12 user         0.00 sys
+modified goto
+      325.87 real       325.21 user         0.00 sys
+modified goto 1
+      301.73 real       301.11 user         0.00 sys
+goto direct
+      183.75 real       183.39 user         0.00 sys
+modified goto 2
+      321.47 real       320.83 user         0.00 sys
+switch
+      652.68 real       651.37 user         0.00 sys
+direct (stack exploder)
+      324.23 real       323.57 user         0.00 sys
+modified direct (stack exploder)
+      324.20 real       323.57 user         0.00 sys
+function pointer
+      508.00 real       506.98 user         0.00 sys
+modified function pointer
+      546.41 real       545.31 user         0.00 sys
