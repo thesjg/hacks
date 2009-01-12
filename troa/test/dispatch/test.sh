@@ -17,6 +17,12 @@ time ./goto-direct2 >/dev/null
 echo "goto direct switch"
 time ./goto-direct-switch >/dev/null
 
+echo "scary goto"
+time ./scarygoto >/dev/null
+
+echo "scary goto (inline)"
+time ./scarygoto-inline >/dev/null
+
 echo "goto"
 time ./goto >/dev/null
 
