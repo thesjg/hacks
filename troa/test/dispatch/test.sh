@@ -55,3 +55,9 @@ time ./funcptr >/dev/null
 
 echo "modified function pointer"
 time ./mfuncptr >/dev/null
+
+echo "call (nodispatch)"
+time ./call-nodispatch >/dev/null
+
+echo "call (switch)"
+time ./call-switch >/dev/null
