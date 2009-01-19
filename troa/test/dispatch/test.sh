@@ -14,6 +14,9 @@ time ./goto-direct >/dev/null
 echo "goto direct 2"
 time ./goto-direct2 >/dev/null
 
+echo "goto direct 3"
+time ./goto-direct3 >/dev/null
+
 echo "goto direct switch"
 time ./goto-direct-switch >/dev/null
 
