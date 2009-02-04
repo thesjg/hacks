@@ -29,13 +29,13 @@ hash_search(const char *key, const hash_keylen_t len)
 
         if (he != NULL) {
             while (1) {
-                if (memcmp(key, he->entry, MIN(he->keylen, len)) == 0) {
+                if (memcmp(key, he->key, MIN(he->len, len)) == 0) {
                     return (he);
                 } else {
-                    if (he->entry[he->keylen + 1] == '\0')
+                    if (he->key[he->len + 1] == '\0')
                         return (NULL);
 
-                    he = (hash_entry_t *)&he->entry[len + 1];
+                    he = (hash_entry_t *)&he->key[len + 1];
                     continue;
                 }
             }
@@ -58,10 +58,10 @@ hash_insert(const char *key, const hash_keylen_t len, void *data)
     if ((he = (hash_entry_t *)malloc(sizeof(hash_entry_t) + len + 1)) == NULL)
         return false;
 
-    he->keylen = len;
+    he->len = len;
     he->data = data;
-    memcpy((void *)he->entry, key, len);
-    he->entry[len + 1] = '\0';
+    memcpy((void *)he->key, key, len);
+    he->key[len + 1] = '\0';
 
     *((uintptr_t *)&ht->table[offset]) = (uintptr_t)he;
 
@@ -93,7 +93,7 @@ static bool
 hash_relocate_bucket(hash_table_t *source, hash_table_t *target,
                      uint32_t bucket)
 {
-
+    return true;
 }
 
 

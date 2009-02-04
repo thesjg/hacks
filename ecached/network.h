@@ -20,17 +20,4 @@ typedef enum {
 } connection_state_t;
 
 
-typedef struct network_data_bucket {
-    int         fd;
-    size_t      offset;
-} network_data_bucket_t;
-
-typedef struct network_data {
-    size_t			size;
-    uint16_t			refcnt;
-    uint16_t			buckets;
-    network_data_bucket_t	data[];
-} network_data_t;
-
-
 #endif _ECACHED_NETWORK_H_

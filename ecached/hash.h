@@ -12,7 +12,7 @@
 #include "error.h"
 
 
-typedef	uint8_t hash_keylen_t;
+typedef	uint_fast8_t hash_keylen_t;
 
 
 #define	HASH_START_SIZE		16	/* (1 << HASH_START_SIZE) == 64k */
@@ -34,9 +34,9 @@ typedef struct hash_table {
 } hash_table_t;
 
 typedef struct hash_entry {
-    hash_keylen_t	keylen;
+    hash_keylen_t	len;
     void		*data;
-    char		entry[];
+    char		key[];
 } hash_entry_t;
 
 
