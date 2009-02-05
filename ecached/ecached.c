@@ -17,5 +17,7 @@ main(int argc, char *argv[])
     if (he != NULL)
         printf("%s\n", he->key);
 
+    network_main();
+
     return (EX_OK);
 }

@@ -30,6 +30,8 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
+#include "error.h"
+
 
 #define	MEMORY_ZONES		6		/* powers of 8 between 8 and 262144 */
 #define	MEMORY_ZONE_MULT	8

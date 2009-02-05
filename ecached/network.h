@@ -1,6 +1,15 @@
 #ifndef _ECACHED_NETWORK_H_
 #define _ECACHED_NETWORK_H_
 
+#include <string.h>
+
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include "error.h"
+#include "memory.h"
+
 
 typedef enum {
     COMMAND_SET,
@@ -20,4 +29,4 @@ typedef enum {
 } connection_state_t;
 
 
-#endif _ECACHED_NETWORK_H_
+#endif /* _ECACHED_NETWORK_H_ */
