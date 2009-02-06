@@ -5,7 +5,7 @@ void
 network_main()
 {
     struct sockaddr_in sa_local;
-    int fd_listen, i = 1;
+    int fd_listen, maxfiles, i = 1;
     socklen_t optval, optlen = sizeof(socklen_t);
 
     if ((fd_listen = socket(PF_INET, SOCK_STREAM, 0)) == -1)
@@ -76,4 +76,28 @@ network_main()
 
     getsockopt(fd_listen, SOL_SOCKET, SO_RCVBUF, (void *)&optval, &optlen);
     printf("Receive buffer size: %d\n", optval);
+
+
+    maxfiles = get_maxfiles();
+    printf("Maxfiles: %d\n", maxfiles);
+
+    do {
+        struct kevent changes[maxfiles], events[maxfiles];
+        int kq, nchanges, nevents;
+
+        if ((kq = kqueue()) == -1)
+            ecached_err(EX_OSERR, "kqueue(2) failure");
+
+        EV_SET(&changes[0], fd_listen, EVFILT_READ, EV_ADD, 0, 0, 0);
+        nchanges = 1;
+
+        while (true) {
+
+            nevents = kevent(kq, &changes, nchanges, &events, maxfiles, NULL);
+            printf("Events: %d\n", nevents);
+
+
+            nchanges = 0;
+        }
+    } while (false);
 }
