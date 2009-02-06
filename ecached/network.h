@@ -1,6 +1,7 @@
 #ifndef _ECACHED_NETWORK_H_
 #define _ECACHED_NETWORK_H_
 
+#include <fcntl.h>
 #include <string.h>
 
 #include <netinet/in.h>
