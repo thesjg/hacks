@@ -28,7 +28,8 @@ int
 main(int argc, char *argv[])
 {
     int opt;
-    bool pFlag, lFlag, dFlag, mFlag, cFlag, vFlag, PFlag, tFlag = false;
+    bool pFlag = false, lFlag = false, dFlag = false, mFlag = false,
+         cFlag = false, vFlag = false, PFlag = false, tFlag = false;
 
     hash_entry_t *he;
 
