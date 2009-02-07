@@ -22,15 +22,42 @@ typedef enum {
     COMMAND_APPEND,
     COMMAND_PREPEND,
     COMMAND_CAS,
+
     COMMAND_GET,
     COMMAND_GETS
-} command_t;
+} network_command_t;
 
 typedef enum {
     CONNECTION_ACCEPTED,
-    CONNECTION_PARSED_REQUEST,
+    CONNECTION_PARSED_COMMAND,
 
-} connection_state_t;
+} network_connection_state_t;
+
+typedef struct network_mod_action {
+    .				key,
+    uint32_t			flags,
+    time_t			exptime, /* ? */
+    .				bytes,
+    boolean			noreply    
+} network_mod_action_t;
+
+typedef struct network_get_action {
+    key(s)
+
+} network_get_action_t;
+
+typedef struct network_action {
+    network_command_t		command,
+    union {
+        network_mod_action_t
+        network_get_action_t
+    }
+} network_action_t;
+
+typedef struct network_connection {
+    network_connection_state_t	state,
+    network_action_t		action
+} network_connection_t;
 
 
 #endif /* _ECACHED_NETWORK_H_ */

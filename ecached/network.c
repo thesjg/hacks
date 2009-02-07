@@ -1,5 +1,4 @@
 #include "network.h"
-#include <errno.h>
 
 void
 network_main()
@@ -75,10 +74,10 @@ network_main()
     setsockopt(fd_listen, SOL_SOCKET, SO_RCVBUF, (void *)&optval, optlen);
 
     getsockopt(fd_listen, SOL_SOCKET, SO_SNDBUF, (void *)&optval, &optlen);
-    printf("Send buffer size: %d\n", optval);
+ecached_warn("Send buffer size: %d", optval);
 
     getsockopt(fd_listen, SOL_SOCKET, SO_RCVBUF, (void *)&optval, &optlen);
-    printf("Receive buffer size: %d\n", optval);
+ecached_warn("Receive buffer size: %d", optval);
 
     maxfiles = get_maxfiles(); /* XXX: From getopt() */
 
@@ -96,7 +95,8 @@ network_main()
 
         while (true) {
 
-            nevents = kevent(kq, &changes, nchanges, &events, maxfiles, NULL);
+            nevents = kevent(kq, (struct kevent *)&changes, nchanges,
+                             (struct kevent *)&events, maxfiles, NULL);
             nchanges = 0;
 
             for (i = 0; i < nevents; ++i) {
@@ -121,7 +121,7 @@ network_main()
                         ++nchanges;
                     } else {
                         buf[rb + 1] = '\0';
-printf("Received: %s", buf);
+ecached_warn("Received: %s", buf);
                     }
                 }
 
