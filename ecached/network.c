@@ -5,6 +5,7 @@ network_main()
 {
     struct sockaddr_in sa_local;
     int fd_listen, maxfiles, i;
+    uint32_t bufsize;
     socklen_t optval, optlen = sizeof(socklen_t);
 
     if ((fd_listen = socket(PF_INET, SOCK_STREAM, 0)) == -1)
@@ -68,21 +69,18 @@ network_main()
      * We will be maintaining a freelist of heap allocated memory this size
      * to do incoming scatter/gather i/o.
      *
-     * TODO: Make this a #define and implement freelist/etc.
+     * TODO: Make this a #define
      */
     optval = (MEMORY_ZONE_MAX >> 2);
     setsockopt(fd_listen, SOL_SOCKET, SO_RCVBUF, (void *)&optval, optlen);
-
-    getsockopt(fd_listen, SOL_SOCKET, SO_SNDBUF, (void *)&optval, &optlen);
-ecached_warn("Send buffer size: %d", optval);
-
     getsockopt(fd_listen, SOL_SOCKET, SO_RCVBUF, (void *)&optval, &optlen);
-ecached_warn("Receive buffer size: %d", optval);
+    bufsize = (uint32_t)optval;
 
     maxfiles = get_maxfiles(); /* XXX: From getopt() */
 
     do {
         struct kevent changes[maxfiles], events[maxfiles];
+        network_connection_t connections[maxfiles];
         struct sockaddr_in sa_remote;
         socklen_t remote_size = sizeof(sa_remote);
         int kq, nchanges, nevents;
@@ -100,28 +98,71 @@ ecached_warn("Receive buffer size: %d", optval);
             nchanges = 0;
 
             for (i = 0; i < nevents; ++i) {
+                int fd = events[i].ident;
 
                 /* New connection */
-                if (events[i].ident == fd_listen) {
+                if (fd == fd_listen) {
                     int fd_new = accept(fd_listen, (struct sockaddr *)&sa_remote, &remote_size);
                     if (fd_new == -1) {
                         /* XXX: Could not accept */
                     } else {
+                        connections[fd_new].state = CONNECTION_ACCEPTED;
+                        connections[fd_new].buffer = NULL;
+//                        connections[fd_new].paction = NULL;
+
                         EV_SET(&changes[nchanges], fd_new, EVFILT_READ, EV_ADD, 0, 0, 0);
                         ++nchanges;
                     }
 
                 /* Existing connection */
                 } else {
-                    char buf[65536];
-                    ssize_t rb = recv(events[i].ident, &buf, sizeof(buf), 0);
-                    if (rb == 0) {
-                        close(events[i].ident);
-                        EV_SET(&changes[nchanges], events[i].ident, 0, EV_DELETE, 0, 0, 0);
-                        ++nchanges;
+printf("Existing\n");
+                    if (events[i].filter == EVFILT_READ) {
+                        network_buffer_t *buf;
+printf("Ready for READ\n");
+
+                        if (connections[fd].buffer == NULL) {
+                            /* Assume malloc(3) will be caching bufsize sized objects */
+                            if ((connections[fd].buffer =
+                                    (network_buffer_t *)malloc(sizeof(network_buffer_t) +
+                                                               bufsize)) == NULL)
+                            {
+                                (void)close(fd);
+                                continue;
+                            }
+
+                            connections[fd].buffer->size = bufsize;
+                            connections[fd].buffer->used = 0;
+                            connections[fd].buffer->buffer[0] = '\0';
+                        }
+
+                        buf = (network_buffer_t *)&connections[fd].buffer;
+
+                        /* XXX: will go to 0 */
+                        /* used not same size/type as buffer ? */
+                        ssize_t rb = recv(fd, &buf->buffer[buf->used],
+                                          buf->size - buf->used, 0);
+                        if (rb == 0) {
+printf("Ack, closing\n");
+                            (void)free(connections[fd].buffer);
+                            (void)close(fd);
+
+                            /*
+                             * kevent(2) does this for us on close(2)
+                             *
+                             * EV_SET(&changes[nchanges], events[i].ident, 0, EV_DELETE, 0, 0, 0);
+                             * ++nchanges;
+                             */
+                        } else {
+                            buf->used += rb;
+
+                            buf->buffer[buf->used + 1] = '\0';
+printf("Received: %s\n", buf->buffer);
+                        }
+
+                    /* EVFILT_WRITE */
                     } else {
-                        buf[rb + 1] = '\0';
-ecached_warn("Received: %s", buf);
+printf("Ready for WRITE\n");
                     }
                 }
 
