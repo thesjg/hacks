@@ -13,8 +13,8 @@
     errx(code, fmt, __VA_ARGS__);		\
 } while (0)
 
-#define ecached_warn(fmt) do {			\
-    warn(fmt);					\
+#define ecached_warn(fmt, ...) do {		\
+    warn(fmt, __VA_ARGS__);			\
 } while (0)
 
 
