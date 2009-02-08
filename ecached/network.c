@@ -1,7 +1,13 @@
 #include "network.h"
 
+
+static void network_command_init(network_connection_t *);
+static bool network_command_parse(network_connection_t *);
+static void print_buffer(network_buffer_t *);
+
+
 void
-network_main()
+network_main(void)
 {
     struct sockaddr_in sa_local;
     int fd_listen, maxfiles, i;
@@ -76,6 +82,8 @@ network_main()
     getsockopt(fd_listen, SOL_SOCKET, SO_RCVBUF, (void *)&optval, &optlen);
     bufsize = (uint32_t)optval;
 
+printf("BUFSIZE: %d\n", bufsize);
+
     maxfiles = get_maxfiles(); /* XXX: From getopt() */
 
     do {
@@ -108,7 +116,6 @@ network_main()
                     } else {
                         connections[fd_new].state = CONNECTION_ACCEPTED;
                         connections[fd_new].buffer = NULL;
-//                        connections[fd_new].paction = NULL;
 
                         EV_SET(&changes[nchanges], fd_new, EVFILT_READ, EV_ADD, 0, 0, 0);
                         ++nchanges;
@@ -116,35 +123,39 @@ network_main()
 
                 /* Existing connection */
                 } else {
-printf("Existing\n");
                     if (events[i].filter == EVFILT_READ) {
                         network_buffer_t *buf;
-printf("Ready for READ\n");
+                        network_connection_t *conn = &connections[fd];
 
-                        if (connections[fd].buffer == NULL) {
+                        if (conn->buffer == NULL) {
                             /* Assume malloc(3) will be caching bufsize sized objects */
-                            if ((connections[fd].buffer =
-                                    (network_buffer_t *)malloc(sizeof(network_buffer_t) +
-                                                               bufsize)) == NULL)
+                            if ((conn->buffer = (network_buffer_t *)malloc(sizeof(network_buffer_t)
+                                              + bufsize)) == NULL)
                             {
                                 (void)close(fd);
                                 continue;
                             }
 
-                            connections[fd].buffer->size = bufsize;
-                            connections[fd].buffer->used = 0;
-                            connections[fd].buffer->buffer[0] = '\0';
+                            conn->state = CONNECTION_PARSING_COMMAND;
+                            buf = (*conn).buffer;
+                            (*buf).size = bufsize;
+                            (*buf).offset = 0;
+                            (*buf).used = 0;
+                            (*buf).buffer[0] = '\0';
+
+                            network_command_init(conn);
+                        } else {
+                            buf = (*conn).buffer;
                         }
 
-                        buf = (network_buffer_t *)&connections[fd].buffer;
-
                         /* XXX: will go to 0 */
-                        /* used not same size/type as buffer ? */
                         ssize_t rb = recv(fd, &buf->buffer[buf->used],
                                           buf->size - buf->used, 0);
                         if (rb == 0) {
-printf("Ack, closing\n");
-                            (void)free(connections[fd].buffer);
+                            if (conn->buffer != NULL) {
+                                (void)free(conn->buffer);
+                                conn->buffer = NULL;
+                            }
                             (void)close(fd);
 
                             /*
@@ -155,18 +166,86 @@ printf("Ack, closing\n");
                              */
                         } else {
                             buf->used += rb;
+                            if (connections[fd].state == CONNECTION_PARSING_COMMAND) {
+buf->buffer[buf->used + 1] = '\0';
 
-                            buf->buffer[buf->used + 1] = '\0';
-printf("Received: %s\n", buf->buffer);
+                                if (network_command_parse(conn) == true)
+                                    connections[fd].state = CONNECTION_PARSED_COMMAND;
+                            }
+print_buffer(buf);
                         }
 
                     /* EVFILT_WRITE */
                     } else {
-printf("Ready for WRITE\n");
                     }
                 }
 
             }
         }
     } while (false);
+}
+
+static void
+network_command_init(network_connection_t *conn)
+{
+    network_action_t *action = &conn->action;
+
+    (*action).command = 0;
+}
+
+static bool
+network_command_parse(network_connection_t *conn)
+{
+    network_action_t *action = &conn->action;
+    network_buffer_t *buffer = (*conn).buffer;
+
+    /* XXX: Ugly as sin */
+    char *commands[] = {"set ", "add ", "repl", "appe", "prep", "cas ", "get ", "gets"};
+    int cskip[]     = {0,      0,      1,      3,       4,     0,      0,      1};
+    int ccmp[]      = {COMMAND_SET, COMMAND_ADD, COMMAND_REPLACE, COMMAND_APPEND,
+                       COMMAND_PREPEND, COMMAND_CAS, COMMAND_GET, COMMAND_GETS};
+    int i, chlen = 4, ncommands = 8;
+
+    if (buffer->used < chlen)
+        goto fail;
+
+start:
+    if (action->command != 0)
+        if (action->command < NETWORK_COMMAND_MODIFY_MAX)
+            goto modify;
+        else
+            goto retrieve;
+
+    for (i = 0; i < ncommands; ++i) {
+        if (memcmp(&buffer->buffer[buffer->offset], commands[i], chlen) == 0) {
+            buffer->offset += chlen + cskip[i];
+            action->command = ccmp[i];
+            break;
+        }
+    }
+
+    if (action->command != 0)
+        goto start;
+    else
+        goto fail;
+
+modify:
+    printf("MODIFY HOHOHO\n");
+    return (true);
+
+retrieve:
+    printf("RETRIEVE HOHOHO\n");
+    return (true);
+
+
+fail:
+    return (false);
+}
+
+static void
+print_buffer(network_buffer_t *buf)
+{
+    printf("Buffer @ 0x%x\n", buf);
+    printf("\tSize: %d of %d\n", buf->used, buf->size);
+    printf("\t%s\n", buf->buffer);
 }
