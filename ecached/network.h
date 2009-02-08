@@ -9,11 +9,11 @@
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
 
 #include "error.h"
 #include "memory.h"
-#include "utils.h"
 
 
 typedef struct network_buffer {
@@ -96,7 +96,16 @@ static network_commands_parse_t network_commands_parse[] = {
 };
 
 
+/* net */
 void network_main(void);
+
+/* parse */
+void network_command_init(network_connection_t *);
+bool network_command_parse(network_connection_t *);
+
+/* util */
+int get_maxfiles(void);
+void print_buffer(network_buffer_t *);
 
 
 #endif /* _ECACHED_NETWORK_H_ */

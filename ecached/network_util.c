@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "network.h"
 
 
 /*
@@ -30,3 +30,10 @@ get_maxfiles(void)
     return (-1);
 }
 
+void
+print_buffer(network_buffer_t *buf)
+{
+    printf("Buffer @ 0x%x\n", buf);
+    printf("\tSize: %d of %d\n", buf->used, buf->size);
+    printf("\t%s\n", buf->buffer);
+}
