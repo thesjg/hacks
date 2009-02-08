@@ -198,30 +198,29 @@ network_command_parse(network_connection_t *conn)
 {
     network_action_t *action = &conn->action;
     network_buffer_t *buffer = (*conn).buffer;
+    network_commands_parse_t *commands = &network_commands_parse;
 
-    /* XXX: Ugly as sin */
-    char *commands[] = {"set ", "add ", "repl", "appe", "prep", "cas ", "get ", "gets"};
-    int cskip[]     = {0,      0,      1,      3,       4,     0,      0,      1};
-    int ccmp[]      = {COMMAND_SET, COMMAND_ADD, COMMAND_REPLACE, COMMAND_APPEND,
-                       COMMAND_PREPEND, COMMAND_CAS, COMMAND_GET, COMMAND_GETS};
-    int i, chlen = 4, ncommands = 8;
-
-    if (buffer->used < chlen)
+    if (buffer->used < NETWORK_COMMAND_PARSE_MIN_LEN)
         goto fail;
 
 start:
-    if (action->command != 0)
+    if (action->command != 0) {
         if (action->command < NETWORK_COMMAND_MODIFY_MAX)
             goto modify;
         else
             goto retrieve;
+    }
 
-    for (i = 0; i < ncommands; ++i) {
-        if (memcmp(&buffer->buffer[buffer->offset], commands[i], chlen) == 0) {
-            buffer->offset += chlen + cskip[i];
-            action->command = ccmp[i];
+    while (commands->command != NULL) {
+        if (memcmp(&buffer->buffer[buffer->offset], commands->command,
+                   MIN(NETWORK_COMMAND_PARSE_MIN_LEN, commands->command_len)) == 0)
+        {
+            buffer->offset += commands->command_len + 1; /* + whitespace */
+            action->command = commands->command_enum;
             break;
         }
+
+        ++commands;
     }
 
     if (action->command != 0)

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <netinet/in.h>
+#include <sys/param.h>
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
@@ -23,18 +24,20 @@ typedef struct network_buffer {
 } network_buffer_t;
 
 #define NETWORK_COMMAND_MODIFY_MAX 100
-typedef struct network_action {
-    enum {
-        COMMAND_SET 	= 1,
-        COMMAND_ADD 	= 2,
-        COMMAND_REPLACE = 3,
-        COMMAND_APPEND 	= 4,
-        COMMAND_PREPEND = 5,
-        COMMAND_CAS 	= 6,
+typedef enum {
+    COMMAND_SET		= 1,
+    COMMAND_ADD		= 2,
+    COMMAND_REPLACE	= 3,
+    COMMAND_APPEND	= 4,
+    COMMAND_PREPEND	= 5,
+    COMMAND_CAS		= 6,
 
-        COMMAND_GET 	= (NETWORK_COMMAND_MODIFY_MAX + 1),
-        COMMAND_GETS 	= (NETWORK_COMMAND_MODIFY_MAX + 2)
-    } command;
+    COMMAND_GET		= (NETWORK_COMMAND_MODIFY_MAX + 1),
+    COMMAND_GETS	= (NETWORK_COMMAND_MODIFY_MAX + 2)
+} network_command_t;
+
+typedef struct network_action {
+    network_command_t	command;
     union {
         struct {
             char	*key;
@@ -60,6 +63,26 @@ typedef struct network_connection {
     network_buffer_t		*buffer;
     network_action_t		action;
 } network_connection_t;
+
+#define NETWORK_COMMAND_PARSE_COUNT	8
+#define NETWORK_COMMAND_PARSE_MIN_LEN	4
+typedef struct network_commands_parse {
+    char*		command;
+    int			command_len;
+    network_command_t	command_enum;
+} network_commands_parse_t;
+
+static network_commands_parse_t network_commands_parse[] = {
+    { "set",		3,	COMMAND_SET },
+    { "add",		3,	COMMAND_ADD },
+    { "replace",	7,	COMMAND_REPLACE },
+    { "append",		6,	COMMAND_APPEND },
+    { "prepend",	7,	COMMAND_PREPEND },
+    { "cas",		3,	COMMAND_CAS },
+    { "get",		3,	COMMAND_GET },
+    { "gets",		4,	COMMAND_GETS },
+    { NULL }
+};
 
 
 void network_main(void);
