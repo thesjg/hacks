@@ -37,18 +37,29 @@ typedef enum {
 } network_command_t;
 
 typedef struct network_action {
+    enum {
+        COMMAND_PARSE_COMMAND,
+        COMMAND_PARSE_KEY,
+        COMMAND_PARSE_FLAGS,
+        COMMAND_PARSE_EXPTIME,
+        COMMAND_PARSE_SIZE,
+        COMMAND_PARSE_NOREPLY,
+        COMMAND_PARSE_COMPLETE
+    } state;
     network_command_t	command;
     union {
         struct {
             char	*key;
-            uint32_t	hash;
             uint32_t	flags;
             time_t	exptime;
-            size_t	bytes;
+            size_t	size;
             bool	noreply;
+
+            uint32_t	hash;
         } modify;
         struct {
             char	*key;
+
             uint32_t	hash;
         } retrieve;
     } action;
