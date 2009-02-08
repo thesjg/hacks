@@ -75,8 +75,12 @@ typedef struct network_connection {
     network_action_t		action;
 } network_connection_t;
 
-#define NETWORK_COMMAND_PARSE_COUNT	8
-#define NETWORK_COMMAND_PARSE_MIN_LEN	4
+
+#define COMMAND_PARSE_COUNT	8
+#define COMMAND_PARSE_MIN_LEN	4
+#define COMMAND_PARSE_SEP	' '
+#define COMMAND_PARSE_TERM	"\r\n"
+
 typedef struct network_commands_parse {
     char*		command;
     int			command_len;
