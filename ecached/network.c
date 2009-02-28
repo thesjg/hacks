@@ -138,7 +138,7 @@ printf("BUFSIZE: %d\n", bufsize);
                             (*buf).used = 0;
                             (*buf).buffer[0] = '\0';
 
-                            network_command_init(conn);
+                            command_init(conn);
                         } else {
                             buf = (*conn).buffer;
                         }
@@ -164,7 +164,7 @@ printf("BUFSIZE: %d\n", bufsize);
                             if (connections[fd].state == CONNECTION_PARSING_COMMAND) {
 buf->buffer[buf->used + 1] = '\0';
 
-                                if (network_command_parse(conn) == true)
+                                if (command_parse(conn) == true)
                                     connections[fd].state = CONNECTION_PARSED_COMMAND;
                             }
 print_buffer(buf);

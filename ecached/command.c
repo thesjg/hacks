@@ -1,14 +1,27 @@
+#include "command.h"
 #include "network.h"
 
+
+static commands_parse_t commands_parse[] = {
+    { "set",		3,	COMMAND_SET },
+    { "add",		3,	COMMAND_ADD },
+    { "replace",	7,	COMMAND_REPLACE },
+    { "append",		6,	COMMAND_APPEND },
+    { "prepend",	7,	COMMAND_PREPEND },
+    { "cas",		3,	COMMAND_CAS },
+    { "get",		3,	COMMAND_GET },
+    { "gets",		4,	COMMAND_GETS },
+    { NULL }
+};
 
 static inline char *parse_create_token(network_buffer_t *);
 static inline char *parse_find_terminator(network_buffer_t *);
 
 
 void
-network_command_init(network_connection_t *conn)
+command_init(network_connection_t *conn)
 {
-    network_action_t *action = &conn->action;
+    command_action_t *action = &conn->action;
 
     action->state = COMMAND_PARSE_COMMAND;
 }
@@ -16,16 +29,16 @@ network_command_init(network_connection_t *conn)
 // XXX: this will have to return something else, enumesque, to handle
 // error conditions
 bool
-network_command_parse(network_connection_t *conn)
+command_parse(network_connection_t *conn)
 {
-    network_action_t *action = &conn->action;
+    command_action_t *action = &conn->action;
     network_buffer_t *buffer = (*conn).buffer;
-    network_commands_parse_t *commands = &network_commands_parse[0];
+    commands_parse_t *commands = &commands_parse[0];
     char *token;
 
 start:
     if (action->state != COMMAND_PARSE_COMMAND) {
-        if (action->command < NETWORK_COMMAND_MODIFY_MAX)
+        if (action->command < COMMAND_MODIFY_MAX)
             goto modify;
         else
             goto retrieve;
@@ -67,6 +80,7 @@ modify:
         if ((token = parse_create_token(buffer)) == NULL)
             goto fail;
 
+        /* XXX: Check if really a number */
         action->action.modify.flags = strtoul(token, NULL, 10);
         buffer->offset += strlen(token) + 1;
         action->state = COMMAND_PARSE_EXPTIME;
@@ -75,6 +89,7 @@ modify:
         if ((token = parse_create_token(buffer)) == NULL)
             goto fail;
 
+        /* XXX: Check if really a number */
         action->action.modify.exptime = strtoul(token, NULL, 10);
         buffer->offset += strlen(token) + 1;
         action->state = COMMAND_PARSE_SIZE;
@@ -94,6 +109,7 @@ modify:
             goto success;
         }
 
+        /* XXX: Check if really a number */
         action->action.modify.size = strtoul(token, NULL, 10);
         buffer->offset += strlen(token) + 1;
         action->state = COMMAND_PARSE_NOREPLY;
@@ -136,7 +152,7 @@ retrieve:
 
 success:
 
-    if (action->command < NETWORK_COMMAND_MODIFY_MAX) {
+    if (action->command < COMMAND_MODIFY_MAX) {
         printf("K: %s\n", action->action.modify.key);
         printf("F: %d\n", action->action.modify.flags);
         printf("E: %d\n", action->action.modify.exptime);
