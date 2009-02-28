@@ -13,18 +13,17 @@
 
 
 typedef	uint_fast8_t hash_keylen_t;
+typedef uint32_t hash_t;
 
 
-#define	HASH_START_SIZE		16	/* (1 << HASH_START_SIZE) == 64k */
+#define HASH_TABLES		2
+#define	HASH_START_SIZE		16	/* 64k */
 #define	HASH_ENTRY_OVERHEAD	(sizeof(hash_keylen_t) + sizeof(void *))
+#define HASH_SEED		1
 
-/* Grow on 50% fill */
+/* Grow when we exceed 100% fill */
 #define HASH_GROW_CHECK(hash) \
-    ((((hash)->entries << 1) > (hash)->buckets) ? true : false)
-
-/* Double the current size */
-#define HASH_GROW_SIZE(hash) \
-    ((hash)->buckets << 1)
+    (((hash)->entries > (hash)->buckets) ? true : false)
 
 typedef struct hash_table {
     struct hash_entry	*table;
@@ -41,8 +40,8 @@ typedef struct hash_entry {
 
 
 void hash_init(void);
-hash_entry_t *hash_search(const char *, const hash_keylen_t);
-bool hash_insert(const char *, const hash_keylen_t, void *);
-
+hash_entry_t *hash_search(const hash_t, const char *, const hash_keylen_t);
+bool hash_insert(const hash_t, const char *, const hash_keylen_t, void *);
+hash_t hash(const char *, hash_keylen_t);
 
 #endif /* _ECACHED_HASH_H_ */

@@ -35,8 +35,8 @@ main(int argc, char *argv[])
 
     cache_init();
 
-    hash_insert("abcd", 4, NULL);
-    he = hash_search("abcd", 4);
+    hash_insert(hash("abcd", 4), "abcd", 4, NULL);
+    he = hash_search(hash("abcd", 4), "abcd", 4);
     if (he != NULL)
         printf("%s\n", he->key);
 

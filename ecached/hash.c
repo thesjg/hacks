@@ -1,13 +1,11 @@
 #include "hash.h"
 
 
-static hash_table_t *table[2];
-static uint32_t seed = 0;
-static bool resizing = false;
+static hash_table_t *table[HASH_TABLES];
+static int active_tables = 1;
 
 static hash_table_t *hash_create(uint32_t);
-static bool hash_relocate_bucket(hash_table_t *, hash_table_t *, uint32_t);
-static uint32_t hash(const char *, hash_keylen_t, const uint32_t);
+static void hash_relocate_bucket(void);
 
 
 void
@@ -18,41 +16,39 @@ hash_init(void)
 }
 
 hash_entry_t *
-hash_search(const char *key, const hash_keylen_t len)
+hash_search(const hash_t hash, const char *key, const hash_keylen_t len)
 {
-    const uint32_t hr = hash(key, len, seed);
-
-    for (int i = 0; i < ((resizing == false) ? 1 : 2); ++i) {
+    for (int i = 0; i < active_tables; ++i) {
         const hash_table_t *ht = table[i];
-        const uint32_t offset = hr & ((1 << ht->shift)-1);
+        const uint32_t offset = hash & ((1 << ht->shift)-1);
         hash_entry_t *he = (hash_entry_t *)(*((uintptr_t *)&ht->table[offset]));
 
         if (he != NULL) {
             while (1) {
-                if (memcmp(key, he->key, MIN(he->len, len)) == 0) {
+                if (memcmp(key, he->key, MIN(he->len, len)) == 0)
                     return (he);
-                } else {
-                    if (he->key[he->len + 1] == '\0')
+                else
+                    if ((he = (hash_entry_t *)&he->key[he->len + 1]) == NULL)
                         return (NULL);
 
-                    he = (hash_entry_t *)&he->key[len + 1];
-                    continue;
-                }
+                /* XXX: Where to put this? */
+                if (active_tables > 1)
+                    hash_relocate_bucket();
             }
         } else {
             return (NULL);
         }
     }
 
+    /* not reached */
     return (NULL);
 }
 
 bool
-hash_insert(const char *key, const hash_keylen_t len, void *data)
+hash_insert(const hash_t hash, const char *key, const hash_keylen_t len, void *data)
 {
-    const uint32_t hr = hash(key, len, seed);
     const hash_table_t *ht = table[0];
-    const uint32_t offset = hr & ((1 << ht->shift)-1);
+    const uint32_t offset = hash & ((1 << ht->shift)-1);
     hash_entry_t *he;
 
     if ((he = (hash_entry_t *)malloc(sizeof(hash_entry_t) + len + 1)) == NULL)
@@ -64,6 +60,15 @@ hash_insert(const char *key, const hash_keylen_t len, void *data)
     he->key[len + 1] = '\0';
 
     *((uintptr_t *)&ht->table[offset]) = (uintptr_t)he;
+
+    if (active_tables == 1 && HASH_GROW_CHECK(ht) == true) {
+        hash_table_t *nht = hash_create(table[0]->shift + 1);
+        if (nht != NULL) {
+            table[1] = table[0];
+            table[0] = nht;
+            ++active_tables;
+        }
+    }
 
     return true;
 }
@@ -89,20 +94,34 @@ hash_create(const uint32_t shiftsize)
     return (ht);
 }
 
-static bool
-hash_relocate_bucket(hash_table_t *source, hash_table_t *target,
-                     uint32_t bucket)
+void
+hash_relocate_bucket(void)
 {
-    return true;
+    static uint32_t bucket = 0;
+    hash_table_t *ht = table[0] + bucket;
+
+    while (ht == NULL) {
+        if (bucket >= ht->buckets) {
+            free(table[1]);
+            --active_tables;
+            bucket = 0;
+        }
+
+        ++ht;
+        ++bucket;
+    }
+
+    // walk buckets and move
 }
 
 
 /* MurmurHash2, by Austin Appleby */
-static uint32_t
-hash(const char *key, hash_keylen_t len, const uint32_t seed)
+hash_t
+hash(const char *key, hash_keylen_t len)
 {
     const uint32_t m = 0x5bd1e995;
     const uint32_t r = 24;
+    const uint32_t seed = HASH_SEED;
     uint32_t h       = seed ^ len;
     const char *data = (const char *)(key);
 
