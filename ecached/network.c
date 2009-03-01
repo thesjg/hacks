@@ -38,44 +38,12 @@ network_main(void)
     if (listen(fd_listen, i) == -1)
         ecached_err(EX_OSERR, "listen(2) failure");
 
-    /*
-     * Attempt to set outgoing sockbuf size to the maximum size of one of
-     * our buckets (or close to it).
-     * With any luck this will allow us to fire off an entire bucket with
-     * every call to sendfile(2), regardless of bucket size
-     */
-    if (getsockopt(fd_listen, SOL_SOCKET, SO_SNDBUF, (void *)&optval, &optlen) == 0)
-    {
-        int iter = 0;
-
-        i = (int)optval;
-        optval = MEMORY_ZONE_MAX;
-        while (1) {
-
-            setsockopt(fd_listen, SOL_SOCKET, SO_SNDBUF, (void *)&optval, optlen);
-            getsockopt(fd_listen, SOL_SOCKET, SO_SNDBUF, (void *)&optval, &optlen);
-
-            if (optval >= MEMORY_ZONE_MAX - (iter * 16384))
-                break;
-            else
-                optval = MEMORY_ZONE_MAX - (iter * 16384);
-            
-            ++iter;
-        }
-    }
+    (void)set_sockbuf_sendsize(fd_listen, MEMORY_ZONE_MAX);
 
     /*
-     * Attempt to set receive buffer size to something reasonable in terms
-     * of memory usage but not performance degrading.
-     * We will be maintaining a freelist of heap allocated memory this size
-     * to do incoming scatter/gather i/o.
-     *
      * TODO: Make this a #define
      */
-    optval = (MEMORY_ZONE_MAX >> 2);
-    setsockopt(fd_listen, SOL_SOCKET, SO_RCVBUF, (void *)&optval, optlen);
-    getsockopt(fd_listen, SOL_SOCKET, SO_RCVBUF, (void *)&optval, &optlen);
-    bufsize = (uint32_t)optval;
+    bufsize = set_sockbuf_recvsize(fd_listen, (MEMORY_ZONE_MAX >> 2));
 
 printf("BUFSIZE: %d\n", bufsize);
 

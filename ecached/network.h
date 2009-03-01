@@ -38,6 +38,8 @@ void network_main(void);
 
 /* util */
 int get_maxfiles(void);
+socklen_t set_sockbuf_sendsize(int, size_t);
+socklen_t set_sockbuf_recvsize(int, size_t);
 void print_buffer(network_buffer_t *);
 
 
