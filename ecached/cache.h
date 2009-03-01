@@ -34,4 +34,4 @@ bool cache_append();
 bool cache_prepend();
 
 
-#endif /* _ECACHED_CACHE_H_ */
+#endif /* !_ECACHED_CACHE_H_ */

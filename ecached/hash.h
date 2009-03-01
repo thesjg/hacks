@@ -44,4 +44,4 @@ hash_entry_t *hash_search(const hash_t, const char *, const hash_keylen_t);
 bool hash_insert(const hash_t, const char *, const hash_keylen_t, void *);
 hash_t hash(const char *, hash_keylen_t);
 
-#endif /* _ECACHED_HASH_H_ */
+#endif /* !_ECACHED_HASH_H_ */

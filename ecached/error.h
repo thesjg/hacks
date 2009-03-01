@@ -18,4 +18,4 @@
 } while (0)
 
 
-#endif /* _ECACHED_ERROR_H_ */
+#endif /* !_ECACHED_ERROR_H_ */

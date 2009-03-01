@@ -41,5 +41,4 @@ int get_maxfiles(void);
 void print_buffer(network_buffer_t *);
 
 
-#endif /* _ECACHED_NETWORK_H_ */
-
+#endif /* !_ECACHED_NETWORK_H_ */

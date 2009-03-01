@@ -69,4 +69,4 @@ void command_init(struct network_connection *);
 bool command_parse(struct network_connection *);
 
 
-#endif /* _ECACHED_COMMAND_H_ */
+#endif /* !_ECACHED_COMMAND_H_ */

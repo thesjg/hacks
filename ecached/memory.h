@@ -59,4 +59,4 @@ typedef struct memory_bucket {
 void memory_init(void);
 
 
-#endif /* _ECACHED_MEMORY_H_ */
+#endif /* !_ECACHED_MEMORY_H_ */
