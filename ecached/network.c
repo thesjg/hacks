@@ -49,6 +49,11 @@ printf("BUFSIZE: %d\n", bufsize);
 
     maxfiles = get_maxfiles(); /* XXX: From getopt() */
 
+    /**
+     *
+     * Begin main loop
+     *
+     */
     do {
         struct kevent changes[maxfiles], events[maxfiles];
         network_connection_t connections[maxfiles];
@@ -100,15 +105,15 @@ printf("BUFSIZE: %d\n", bufsize);
                             }
 
                             conn->state = CONNECTION_PARSING_COMMAND;
-                            buf = (*conn).buffer;
-                            (*buf).size = bufsize;
-                            (*buf).offset = 0;
-                            (*buf).used = 0;
-                            (*buf).buffer[0] = '\0';
+                            buf = conn->buffer;
+                            buf->size = bufsize;
+                            buf->offset = 0;
+                            buf->used = 0;
+                            buf->buffer[0] = '\0';
 
                             command_init(conn);
                         } else {
-                            buf = (*conn).buffer;
+                            buf = conn->buffer;
                         }
 
                         /* XXX: will go to 0 */

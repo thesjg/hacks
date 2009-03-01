@@ -32,7 +32,7 @@ bool
 command_parse(network_connection_t *conn)
 {
     command_action_t *action = &conn->action;
-    network_buffer_t *buffer = (*conn).buffer;
+    network_buffer_t *buffer = conn->buffer;
     commands_parse_t *commands = &commands_parse[0];
     char *token;
 
