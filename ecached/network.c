@@ -1,6 +1,9 @@
 #include "network.h"
 
 
+static inline network_buffer_t *network_buffer_allocate(size_t bufsize);
+
+
 void
 network_main(void)
 {
@@ -97,8 +100,7 @@ printf("BUFSIZE: %d\n", bufsize);
 
                         if (conn->buffer == NULL) {
                             /* Assume malloc(3) will be caching bufsize sized objects */
-                            if ((conn->buffer = (network_buffer_t *)malloc(sizeof(network_buffer_t)
-                                              + bufsize)) == NULL)
+                            if ((conn->buffer = network_buffer_allocate(bufsize)) == NULL)
                             {
                                 (void)close(fd);
                                 continue;
@@ -106,10 +108,6 @@ printf("BUFSIZE: %d\n", bufsize);
 
                             conn->state = CONNECTION_PARSING_COMMAND;
                             buf = conn->buffer;
-                            buf->size = bufsize;
-                            buf->offset = 0;
-                            buf->used = 0;
-                            buf->buffer[0] = '\0';
 
                             command_init(conn);
                         } else {
@@ -151,4 +149,38 @@ print_buffer(buf);
             }
         }
     } while (false);
+}
+
+void
+network_buffer_acquire(network_buffer_t *buf)
+{
+    ++buf->refcnt;
+}
+
+void
+network_buffer_release(network_buffer_t *buf)
+{
+    --buf->refcnt;
+    if (buf->refcnt == 0)
+        free(buf);
+}
+
+network_buffer_t *
+network_buffer_allocate(size_t bufsize)
+{
+    network_buffer_t *buf;
+
+    if ((buf = (network_buffer_t *)malloc(sizeof(network_buffer_t)
+                                          + bufsize)) == NULL)
+    {
+        return (NULL);
+    }
+
+    buf->size = bufsize;
+    buf->offset = 0;
+    buf->used = 0;
+    buf->refcnt = 1;
+    buf->buffer[0] = '\0';
+
+    return buf;
 }

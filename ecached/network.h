@@ -20,6 +20,7 @@ typedef struct network_buffer {
     size_t	size;
     size_t      offset;
     size_t	used;
+    uint8_t	refcnt;
     char	buffer[];
 } network_buffer_t;
 
@@ -35,6 +36,8 @@ typedef struct network_connection {
 
 
 void network_main(void);
+inline void network_buffer_acquire(network_buffer_t *buf);
+inline void network_buffer_release(network_buffer_t *buf);
 
 /* util */
 int get_maxfiles(void);
