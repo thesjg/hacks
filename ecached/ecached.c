@@ -36,9 +36,26 @@ main(int argc, char *argv[])
     cache_init();
 
     hash_insert(hash("abcd", 4), "abcd", 4, NULL);
+    hash_insert(hash("efgh", 4), "efgh", 4, NULL);
+    hash_insert(hash("ijkl", 4), "ijkl", 4, NULL);
+    hash_insert(hash("mnop", 4), "mnop", 4, NULL);
+
+    he = hash_search(hash("ijkl", 4), "ijkl", 4);
+    if (he != NULL)
+        printf("%s\n", he->key);
+
     he = hash_search(hash("abcd", 4), "abcd", 4);
     if (he != NULL)
         printf("%s\n", he->key);
+
+    he = hash_search(hash("mnop", 4), "mnop", 4);
+    if (he != NULL)
+        printf("%s\n", he->key);
+
+    he = hash_search(hash("efgh", 4), "efgh", 4);
+    if (he != NULL)
+        printf("%s\n", he->key);
+
 
     while ((opt = getopt(argc, argv, "p:l:dm:c:v:P:t:h")) != -1) {
         switch (opt) {

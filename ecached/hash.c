@@ -25,11 +25,13 @@ hash_search(const hash_t hash, const char *key, const hash_keylen_t len)
 
         if (he != NULL) {
             while (1) {
-                if (memcmp(key, he->key, MIN(he->len, len)) == 0)
-                    return (he);
-                else
-                    if ((he = (hash_entry_t *)&he->key[he->len + 1]) == NULL)
+                if (memcmp(key, he->key, MIN(he->len, len)) != 0)
+                    if (he->key[he->len + 1] == '\0')
                         return (NULL);
+                    else
+                        he = (hash_entry_t *)&he->key[he->len + 1];
+                else
+                    return (he);
 
                 /* XXX: Where to put this? */
                 if (active_tables > 1)
@@ -49,17 +51,49 @@ hash_insert(const hash_t hash, const char *key, const hash_keylen_t len, void *d
 {
     const hash_table_t *ht = table[0];
     const uint32_t offset = hash & ((1 << ht->shift)-1);
+    hash_entry_t *she = (hash_entry_t *)(*((uintptr_t *)&ht->table[offset]));
     hash_entry_t *he;
+    uint32_t hesize = sizeof(hash_entry_t);
 
-    if ((he = (hash_entry_t *)malloc(sizeof(hash_entry_t) + len + 1)) == NULL)
-        return false;
+    if (she != NULL) {
+        uint32_t asize = 0;
+        he = she;
 
-    he->len = len;
-    he->data = data;
-    memcpy((void *)he->key, key, len);
-    he->key[len + 1] = '\0';
+        while (1) {
+            asize += hesize + she->len;
 
-    *((uintptr_t *)&ht->table[offset]) = (uintptr_t)he;
+            if (she->key[she->len + 1] == '\0') {
+                if ((she = he = (hash_entry_t *)realloc(he, hesize + asize + len + 1)) == NULL)
+                    return false;
+
+                while (she->key[she->len + 1] != '\0')
+                    she = (hash_entry_t *)&she->key[she->len + 1];
+
+                she = (hash_entry_t *)&she->key[she->len + 1];
+
+                she->len = len;
+                she->data = data;
+                memcpy((void *)she->key, key, len);
+                she->key[len + 1] = '\0';
+
+                *((uintptr_t *)&ht->table[offset]) = (uintptr_t)he;
+
+                break;
+            } else {
+                she = (hash_entry_t *)&she->key[she->len + 1];
+            }
+        }
+    } else {
+        if ((he = (hash_entry_t *)malloc(hesize + len + 1)) == NULL)
+            return false;
+
+        he->len = len;
+        he->data = data;
+        memcpy((void *)he->key, key, len);
+        he->key[len + 1] = '\0';
+
+        *((uintptr_t *)&ht->table[offset]) = (uintptr_t)he;
+    }
 
     if (active_tables == 1 && HASH_GROW_CHECK(ht) == true) {
         hash_table_t *nht = hash_create(table[0]->shift + 1);
