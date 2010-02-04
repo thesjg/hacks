@@ -31,6 +31,7 @@
 #include <sys/mman.h>
 
 #include "error.h"
+#include "settings.h"
 
 
 #define	MEMORY_ZONES		6		/* powers of 8 between 8 and 262144 */
@@ -56,7 +57,7 @@ typedef struct memory_bucket {
 } memory_bucket_t;
 
 
-void memory_init(void);
+void memory_init(ecached_settings_t *);
 
 
 #endif /* !_ECACHED_MEMORY_H_ */

@@ -4,6 +4,7 @@
 #include "error.h"
 #include "memory.h"
 #include "hash.h"
+#include "settings.h"
 
 
 typedef hash_keylen_t cache_keylen_t;
@@ -23,7 +24,7 @@ typedef struct cache_object {
 } cache_object_t;
 
 
-void cache_init(void);
+void cache_init(ecached_settings_t *);
 
 /* These effectively map to protocol-level commands */
 cache_object_t *cache_get(const char *, const cache_keylen_t);

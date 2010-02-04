@@ -9,7 +9,7 @@ static void hash_relocate_bucket(void);
 
 
 void
-hash_init(void)
+hash_init(ecached_settings_t *settings)
 {
     if ((table[0] = hash_create(HASH_START_SIZE)) == NULL)
         ecached_err(EX_SOFTWARE, "hash_create() failure");

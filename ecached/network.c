@@ -5,7 +5,7 @@ static inline network_buffer_t *network_buffer_allocate(size_t bufsize);
 
 
 void
-network_main(void)
+network_main(ecached_settings_t *settings)
 {
     struct sockaddr_in sa_local;
     int fd_listen, maxfiles, i;
@@ -27,7 +27,7 @@ network_main(void)
 
     /* */
     sa_local.sin_family = AF_INET;
-    sa_local.sin_port = htons(11211); /* XXX: Port via getopt() */
+    sa_local.sin_port = htons(settings->port);
     sa_local.sin_addr.s_addr = htonl(INADDR_ANY); /* XXX: Addr via getopt() */
     memset(&(sa_local.sin_zero), 0, sizeof(sa_local.sin_zero));
 

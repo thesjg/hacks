@@ -10,6 +10,7 @@
 #include <sys/param.h>
 
 #include "error.h"
+#include "settings.h"
 
 
 typedef	uint_fast8_t hash_keylen_t;
@@ -39,7 +40,7 @@ typedef struct hash_entry {
 } hash_entry_t;
 
 
-void hash_init(void);
+void hash_init(ecached_settings_t *);
 hash_entry_t *hash_search(const hash_t, const char *, const hash_keylen_t);
 bool hash_insert(const hash_t, const char *, const hash_keylen_t, void *);
 hash_t hash(const char *, hash_keylen_t);

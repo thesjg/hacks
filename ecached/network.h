@@ -14,6 +14,7 @@
 #include "error.h"
 #include "memory.h"
 #include "command.h"
+#include "settings.h"
 
 
 typedef struct network_buffer {
@@ -35,7 +36,7 @@ typedef struct network_connection {
 } network_connection_t;
 
 
-void network_main(void);
+void network_main(ecached_settings_t *);
 inline void network_buffer_acquire(network_buffer_t *buf);
 inline void network_buffer_release(network_buffer_t *buf);
 
