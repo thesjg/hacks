@@ -1,0 +1,13 @@
+ECACHED MEMORY CACHE DAEMON README
+
+Command-line Options:
+
+-p <port>         TCP port
+-l <address>      Listen address
+-m <megabytes>    Maximum memory usage
+-c <connections>  Maximum connections
+-v [<level>]      Verbosity
+-P <filename>     PID file
+-t                Use threads
+-h                Help
+
