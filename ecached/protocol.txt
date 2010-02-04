@@ -1,0 +1,95 @@
+ECACHED MEMORY CACHE DAEMON:
+
+ecached is a network Key => Value store implemented as a TCP request/response
+protocol. It features eight commands: 'set', 'add', 'replace', 'append',
+'prepend', 'cas', 'get' and 'gets'. Every command recognized by the server
+and any valid response generated will be terminated with '\r\n'.
+
+
+Storage Commands:
+    Command Format:
+        "command <key> <flags> <exptime> <bytes> [noreply]"
+    Commands:
+        "set", Store supplied data
+        "add", Store supplied data if supplied key is not currently in use
+        "replace", Store supplied data only if supplied key is already in use
+        "append", Append supplied data to the end of existing data
+        "prepend", Prepend supplied data to the end of existing data
+            The append and prepend operations ignore the supplied flags and
+            exptime retaining the values supplied with the original key.
+    Check and Set Command:
+        "cas <key> <flags> <exptime> <bytes> <cas unique> [noreply]"
+            Stores supplied data only if it has not been updated since the
+            storing client last retrieved it.
+    XXX:
+        <key>, Alphanumeric key, no spaces allowed, maximum of 250 characters
+        <flags>, Arbitrary 32-bit unsigned integer transferred in string
+            format and returned to the client on retrieval.
+        <exptime>, Expiration time of key and data. May be set to 0 to
+            indicate that the data does not expire. Positive values may be
+            Unix time or a positive offset in seconds from the current time.
+        <bytes>, The number of bytes of data that will be transferred and is
+            expected to be stored not inclusive of the terminator. May be 0.
+        <cas unique>, Unique 64-bit value representing an existing k,v pair
+            as returned by the "gets" command.
+        [noreply], OPTIONAL, Instructs the server not to send a reply, an
+            error may still be returned if the request was malformed.
+
+Storage Responses:
+    "STORED", Indicated success
+    "NOT_STORED", Data was not stored without an error occuring, such as in
+        the case of an un-met condition to an "add" or "replace" command.
+    "EXISTS", The item being stored with a "cas" command has been modified.
+    "NOT_FOUND", The item being stored with a "cas" command did not exist.
+
+
+Retrieval Commands:
+    "get <key> [<key> ...]"
+    "gets <key> [<key> ...]"
+        Requests that one or more k,v pairs be returned
+
+Retrieval Responses:
+    "VALUE <key> <flags> <bytes> [<cas unique>]", Will be output by the server
+        zero or more times for each key found. Terminated and immediately
+        followed by the terminated data.
+    "END", Indicates the end of the response
+
+
+Expiration Commands:
+    "delete <key> [noreply]", Delete the specified key
+
+Expiration Responses:
+    "DELETED", Indicates success
+    "NOT_FOUND", Unable to delete nonexistant key
+
+
+Data Modification Commands:
+    "incr <key> <value> [noreply]"
+    "decr <key> <value> [noreply]"
+        Increments or decrements the stored value for the given key by the
+        supplied value. Treats the supplied value as a decimal string
+        representation of a 64-bit unsigned integer. Overflow is allowed but
+        underflow is trapped, the stored value will never be negative.
+
+Data Modification Responses:
+    "NOT FOUND", Key was not found
+    "<value>", New data value subsequent to a successful operation
+
+
+Miscellaneous Commands:
+    "flush_all", Invalidate all keys
+    "version", Returns a varsion string as "VERSION <version>"
+    "verbosity <level>", Set server debug level
+    "quit", Closes the current connection
+
+
+Error Responses:
+    "ERROR", Client issued an invalid command
+    "CLIENT_ERROR <error>", Typically a malformed request
+    "SERVER_ERROR <error>", Something bad happened
+
+
+This protocol documentation is brief as it is only intended as a quick
+reference. It is based upon the memcached (http://memcached.org/)
+protocol documentation, to which the ecached protocol is expected to
+conform.
