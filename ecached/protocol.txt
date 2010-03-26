@@ -78,7 +78,7 @@ Data Modification Responses:
 
 Miscellaneous Commands:
     "flush_all", Invalidate all keys
-    "version", Returns a varsion string as "VERSION <version>"
+    "version", Returns a version string as "VERSION <version>"
     "verbosity <level>", Set server debug level
     "quit", Closes the current connection
 
