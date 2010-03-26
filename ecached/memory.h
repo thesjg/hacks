@@ -57,7 +57,7 @@ typedef struct memory_bucket {
 } memory_bucket_t;
 
 
-void memory_init(ecached_settings_t *);
+void memory_init(ecached_settings_t);
 
 
 #endif /* !_ECACHED_MEMORY_H_ */

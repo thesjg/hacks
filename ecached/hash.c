@@ -1,27 +1,33 @@
 #include "hash.h"
 
 
-static hash_table_t *table[HASH_TABLES];
+static hash_table_t table[HASH_TABLES];
 static int active_tables = 1;
 
-static hash_table_t *hash_create(uint32_t);
+static hash_table_t hash_create(uint32_t);
 static void hash_relocate_bucket(void);
 
 
 void
-hash_init(ecached_settings_t *settings)
+hash_init(ecached_settings_t settings)
 {
     if ((table[0] = hash_create(HASH_START_SIZE)) == NULL)
         ecached_err(EX_SOFTWARE, "hash_create() failure");
 }
 
-hash_entry_t *
+/*
+ * Search the hash table for an existing entry given:
+ *     Hash of key, key, length of the key
+ *
+ * Returns hash_entry_t on success, NULL on failure
+ */
+hash_entry_t
 hash_search(const hash_t hash, const char *key, const hash_keylen_t len)
 {
     for (int i = 0; i < active_tables; ++i) {
-        const hash_table_t *ht = table[i];
+        const hash_table_t ht = table[i];
         const uint32_t offset = hash & ((1 << ht->shift)-1);
-        hash_entry_t *he = (hash_entry_t *)(*((uintptr_t *)&ht->table[offset]));
+        hash_entry_t he = (hash_entry_t)(*((uintptr_t *)&ht->table[offset]));
 
         if (he != NULL) {
             while (1) {
@@ -29,7 +35,7 @@ hash_search(const hash_t hash, const char *key, const hash_keylen_t len)
                     if (he->key[he->len + 1] == '\0')
                         return (NULL);
                     else
-                        he = (hash_entry_t *)&he->key[he->len + 1];
+                        he = (hash_entry_t)&he->key[he->len + 1];
                 else
                     return (he);
 
@@ -49,10 +55,10 @@ hash_search(const hash_t hash, const char *key, const hash_keylen_t len)
 bool
 hash_insert(const hash_t hash, const char *key, const hash_keylen_t len, void *data)
 {
-    const hash_table_t *ht = table[0];
+    const hash_table_t ht = table[0];
     const uint32_t offset = hash & ((1 << ht->shift)-1);
-    hash_entry_t *she = (hash_entry_t *)(*((uintptr_t *)&ht->table[offset]));
-    hash_entry_t *he;
+    hash_entry_t she = (hash_entry_t)(*((uintptr_t *)&ht->table[offset]));
+    hash_entry_t he;
     uint32_t hesize = sizeof(hash_entry_t);
 
     if (she != NULL) {
@@ -63,13 +69,13 @@ hash_insert(const hash_t hash, const char *key, const hash_keylen_t len, void *d
             asize += hesize + she->len;
 
             if (she->key[she->len + 1] == '\0') {
-                if ((she = he = (hash_entry_t *)realloc(he, hesize + asize + len + 1)) == NULL)
+                if ((she = he = (hash_entry_t)realloc(he, hesize + asize + len + 1)) == NULL)
                     return false;
 
                 while (she->key[she->len + 1] != '\0')
-                    she = (hash_entry_t *)&she->key[she->len + 1];
+                    she = (hash_entry_t)&she->key[she->len + 1];
 
-                she = (hash_entry_t *)&she->key[she->len + 1];
+                she = (hash_entry_t)&she->key[she->len + 1];
 
                 she->len = len;
                 she->data = data;
@@ -80,11 +86,11 @@ hash_insert(const hash_t hash, const char *key, const hash_keylen_t len, void *d
 
                 break;
             } else {
-                she = (hash_entry_t *)&she->key[she->len + 1];
+                she = (hash_entry_t)&she->key[she->len + 1];
             }
         }
     } else {
-        if ((he = (hash_entry_t *)malloc(hesize + len + 1)) == NULL)
+        if ((he = (hash_entry_t)malloc(hesize + len + 1)) == NULL)
             return false;
 
         he->len = len;
@@ -96,7 +102,7 @@ hash_insert(const hash_t hash, const char *key, const hash_keylen_t len, void *d
     }
 
     if (active_tables == 1 && HASH_GROW_CHECK(ht) == true) {
-        hash_table_t *nht = hash_create(table[0]->shift + 1);
+        hash_table_t nht = hash_create(table[0]->shift + 1);
         if (nht != NULL) {
             table[1] = table[0];
             table[0] = nht;
@@ -107,16 +113,16 @@ hash_insert(const hash_t hash, const char *key, const hash_keylen_t len, void *d
     return true;
 }
 
-static hash_table_t *
+static hash_table_t
 hash_create(const uint32_t shiftsize)
 {
-    hash_table_t *ht;
+    hash_table_t ht;
     const uint32_t size = (1 << shiftsize);
 
-    if ((ht = (hash_table_t *)malloc(sizeof(hash_table_t))) == NULL)
+    if ((ht = (hash_table_t)malloc(sizeof(*ht))) == NULL)
         return (NULL);
 
-    if ((ht->table = (hash_entry_t *)malloc(sizeof(hash_entry_t *) * size)) == NULL)
+    if ((ht->table = (hash_entry_t)malloc(sizeof(hash_entry_t) * size)) == NULL)
         return (NULL);
 
     memset(ht->table, 0, size);
@@ -132,7 +138,7 @@ void
 hash_relocate_bucket(void)
 {
     static uint32_t bucket = 0;
-    hash_table_t *ht = table[0] + bucket;
+    hash_table_t ht = table[0] + bucket;
 
     while (ht == NULL) {
         if (bucket >= ht->buckets) {

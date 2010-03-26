@@ -9,7 +9,7 @@ static inline size_t pow8_ceil(size_t);
 
 
 void
-memory_init(ecached_settings_t *settings)
+memory_init(ecached_settings_t settings)
 {
     int i;
     size_t size = MEMORY_ZONE_MIN;

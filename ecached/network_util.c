@@ -77,7 +77,7 @@ set_sockbuf_recvsize(int fd, size_t size)
 }
 
 void
-print_buffer(network_buffer_t *buf)
+print_buffer(network_buffer_t buf)
 {
     printf("Buffer @ 0x%x\n", (uintptr_t)buf);
     printf("\tSize: %d of %d\n", buf->used, buf->size);

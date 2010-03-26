@@ -18,12 +18,13 @@
 
 
 typedef struct network_buffer {
-    size_t	size;
-    size_t      offset;
-    size_t	used;
-    uint8_t	refcnt;
-    char	buffer[];
-} network_buffer_t;
+    size_t			size;
+    size_t      		offset;
+    size_t			used;
+    uint8_t			refcnt;
+    struct network_buffer 	*next;
+    char			buffer[];
+} *network_buffer_t;
 
 typedef struct network_connection {
     enum {
@@ -31,20 +32,20 @@ typedef struct network_connection {
         CONNECTION_PARSING_COMMAND,
         CONNECTION_PARSED_COMMAND,
     } state;
-    network_buffer_t		*buffer;
-    command_action_t		action;
-} network_connection_t;
+    network_buffer_t		buffer;
+    struct command_action	action;
+} *network_connection_t;
 
 
-void network_main(ecached_settings_t *);
-inline void network_buffer_acquire(network_buffer_t *buf);
-inline void network_buffer_release(network_buffer_t *buf);
+void network_main(ecached_settings_t);
+inline void network_buffer_acquire(network_buffer_t);
+inline void network_buffer_release(network_buffer_t);
 
 /* util */
 int get_maxfiles(void);
 socklen_t set_sockbuf_sendsize(int, size_t);
 socklen_t set_sockbuf_recvsize(int, size_t);
-void print_buffer(network_buffer_t *);
+void print_buffer(network_buffer_t);
 
 
 #endif /* !_ECACHED_NETWORK_H_ */

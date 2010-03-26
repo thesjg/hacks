@@ -30,7 +30,7 @@ int
 main(int argc, char *argv[])
 {
     int opt;
-    ecached_settings_t settings;
+    struct ecached_settings settings;
     bool pFlag = false, lFlag = false, dFlag = false, mFlag = false,
          cFlag = false, vFlag = false, PFlag = false, tFlag = false;
 

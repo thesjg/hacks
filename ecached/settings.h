@@ -19,7 +19,7 @@ typedef struct ecached_settings {
     uint8_t		verbosity;
     char		*pid_file;
     bool		threads;
-} ecached_settings_t;
+} *ecached_settings_t;
 
 
 #endif /* !_ECACHED_SETTINGS_H_ */

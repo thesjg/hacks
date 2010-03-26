@@ -31,17 +31,17 @@ typedef struct hash_table {
     uint32_t		buckets;
     uint32_t		entries;
     uint32_t		shift;
-} hash_table_t;
+} *hash_table_t;
 
 typedef struct hash_entry {
     hash_keylen_t	len;
     void		*data;
     char		key[];
-} hash_entry_t;
+} *hash_entry_t;
 
 
-void hash_init(ecached_settings_t *);
-hash_entry_t *hash_search(const hash_t, const char *, const hash_keylen_t);
+void hash_init(ecached_settings_t);
+hash_entry_t hash_search(const hash_t, const char *, const hash_keylen_t);
 bool hash_insert(const hash_t, const char *, const hash_keylen_t, void *);
 hash_t hash(const char *, hash_keylen_t);
 

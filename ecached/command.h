@@ -7,6 +7,8 @@
 
 #include <sys/types.h>
 
+#include "hash.h"
+
 
 struct network_connection;
 
@@ -43,26 +45,26 @@ typedef struct command_action {
             size_t	size;
             bool	noreply;
 
-            uint32_t	hash;
+            hash_t	hash;
         } modify;
         struct {
             char	*key;
 
-            uint32_t	hash;
+            hash_t	hash;
         } retrieve;
     } action;
-} command_action_t;
+} *command_action_t;
 
 #define COMMAND_PARSE_COUNT	8
 #define COMMAND_PARSE_MIN_LEN	4
 #define COMMAND_PARSE_SEP	' '
 #define COMMAND_PARSE_TERM	"\r\n"
 
-typedef struct commands_parse_s {
+typedef struct commands_parse {
     char		*command;
     int			command_len;
     command_t		command_enum;
-} commands_parse_t;
+} *commands_parse_t;
 
 
 void command_init(struct network_connection *);

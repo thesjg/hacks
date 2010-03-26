@@ -1,11 +1,11 @@
 #include "network.h"
 
 
-static inline network_buffer_t *network_buffer_allocate(size_t bufsize);
+static inline network_buffer_t network_buffer_allocate(size_t);
 
 
 void
-network_main(ecached_settings_t *settings)
+network_main(ecached_settings_t settings)
 {
     struct sockaddr_in sa_local;
     int fd_listen, maxfiles, i;
@@ -59,7 +59,7 @@ printf("BUFSIZE: %d\n", bufsize);
      */
     do {
         struct kevent changes[maxfiles], events[maxfiles];
-        network_connection_t connections[maxfiles];
+        struct network_connection connections[maxfiles];
         struct sockaddr_in sa_remote;
         socklen_t remote_size = sizeof(sa_remote);
         int kq, nchanges, nevents;
@@ -95,8 +95,8 @@ printf("BUFSIZE: %d\n", bufsize);
                 /* Existing connection */
                 } else {
                     if (events[i].filter == EVFILT_READ) {
-                        network_buffer_t *buf;
-                        network_connection_t *conn = &connections[fd];
+                        network_buffer_t buf;
+                        network_connection_t conn = &connections[fd];
 
                         if (conn->buffer == NULL) {
                             /* Assume malloc(3) will be caching bufsize sized objects */
@@ -152,34 +152,32 @@ print_buffer(buf);
 }
 
 void
-network_buffer_acquire(network_buffer_t *buf)
+network_buffer_acquire(network_buffer_t buf)
 {
     ++buf->refcnt;
 }
 
 void
-network_buffer_release(network_buffer_t *buf)
+network_buffer_release(network_buffer_t buf)
 {
     --buf->refcnt;
     if (buf->refcnt == 0)
         free(buf);
 }
 
-network_buffer_t *
+network_buffer_t
 network_buffer_allocate(size_t bufsize)
 {
-    network_buffer_t *buf;
+    network_buffer_t buf;
 
-    if ((buf = (network_buffer_t *)malloc(sizeof(network_buffer_t)
-                                          + bufsize)) == NULL)
-    {
+    if ((buf = (network_buffer_t)malloc(sizeof(*buf) + bufsize)) == NULL)
         return (NULL);
-    }
 
     buf->size = bufsize;
     buf->offset = 0;
     buf->used = 0;
     buf->refcnt = 1;
+    buf->next = NULL;
     buf->buffer[0] = '\0';
 
     return buf;

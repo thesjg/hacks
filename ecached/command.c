@@ -2,7 +2,7 @@
 #include "network.h"
 
 
-static commands_parse_t commands_parse[] = {
+static struct commands_parse commands_parse[] = {
     { "set",		3,	COMMAND_SET },
     { "add",		3,	COMMAND_ADD },
     { "replace",	7,	COMMAND_REPLACE },
@@ -14,14 +14,14 @@ static commands_parse_t commands_parse[] = {
     { NULL }
 };
 
-static inline char *parse_create_token(network_buffer_t *);
-static inline char *parse_find_terminator(network_buffer_t *);
+static inline char *parse_create_token(network_buffer_t);
+static inline char *parse_find_terminator(network_buffer_t);
 
 
 void
-command_init(network_connection_t *conn)
+command_init(network_connection_t conn)
 {
-    command_action_t *action = &conn->action;
+    command_action_t action = &conn->action;
 
     action->state = COMMAND_PARSE_COMMAND;
 }
@@ -29,11 +29,11 @@ command_init(network_connection_t *conn)
 // XXX: this will have to return something else, enumesque, to handle
 // error conditions
 bool
-command_parse(network_connection_t *conn)
+command_parse(network_connection_t conn)
 {
-    command_action_t *action = &conn->action;
-    network_buffer_t *buffer = conn->buffer;
-    commands_parse_t *commands = &commands_parse[0];
+    command_action_t action = &conn->action;
+    network_buffer_t buffer = conn->buffer;
+    commands_parse_t commands = &commands_parse[0];
     char *token;
 
 start:
@@ -172,7 +172,7 @@ fail:
 }
 
 static inline char *
-parse_create_token(network_buffer_t *buffer)
+parse_create_token(network_buffer_t buffer)
 {
     char *offset = (char *)memchr(&buffer->buffer[buffer->offset],
                                   COMMAND_PARSE_SEP,
@@ -186,7 +186,7 @@ parse_create_token(network_buffer_t *buffer)
 }
 
 static inline char *
-parse_find_terminator(network_buffer_t *buffer)
+parse_find_terminator(network_buffer_t buffer)
 {
     return (char *)memmem(&buffer->buffer[buffer->offset],
                           buffer->used - buffer->offset,
