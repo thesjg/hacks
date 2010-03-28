@@ -3,14 +3,14 @@
 
 
 static struct commands_parse commands_parse[] = {
-    { "set",		3,	COMMAND_SET },
-    { "add",		3,	COMMAND_ADD },
-    { "replace",	7,	COMMAND_REPLACE },
-    { "append",		6,	COMMAND_APPEND },
-    { "prepend",	7,	COMMAND_PREPEND },
-    { "cas",		3,	COMMAND_CAS },
-    { "get",		3,	COMMAND_GET },
-    { "gets",		4,	COMMAND_GETS },
+    { "set",		3,	COMMAND_SET,	COMMAND_TYPE_STORE },
+    { "add",		3,	COMMAND_ADD,	COMMAND_TYPE_STORE },
+    { "replace",	7,	COMMAND_REPLACE,COMMAND_TYPE_STORE },
+    { "append",		6,	COMMAND_APPEND,	COMMAND_TYPE_STORE },
+    { "prepend",	7,	COMMAND_PREPEND,COMMAND_TYPE_STORE },
+    { "cas",		3,	COMMAND_CAS,	COMMAND_TYPE_STORE },
+    { "get",		3,	COMMAND_GET,	COMMAND_TYPE_RETRIEVE },
+    { "gets",		4,	COMMAND_GETS,	COMMAND_TYPE_RETRIEVE },
     { NULL }
 };
 
@@ -39,7 +39,7 @@ command_parse(network_connection_t conn)
 start:
     if (action->state != COMMAND_PARSE_COMMAND) {
         if (action->command < COMMAND_MODIFY_MAX)
-            goto modify;
+            goto store;
         else
             goto retrieve;
     } else {
@@ -53,6 +53,7 @@ start:
         {
             buffer->offset += commands->command_len + 1; /* + whitespace */
             action->command = commands->command_enum;
+            action->command_type = commands->command_type;
             break;
         }
 
@@ -66,14 +67,17 @@ start:
         goto fail;
     }
 
-modify:
+store:
     switch (action->state) {
     case COMMAND_PARSE_KEY:
         if ((token = parse_create_token(buffer)) == NULL)
             goto fail;
 
-        action->action.modify.key = token;
-        buffer->offset += strlen(token) + 1;
+        action->action.store.key = token;
+        action->action.store.keylen = strlen(token);
+        action->action.store.hash = hash(action->action.store.key,
+                                         action->action.store.keylen);
+        buffer->offset += action->action.store.keylen + 1;
         action->state = COMMAND_PARSE_FLAGS;
 
     case COMMAND_PARSE_FLAGS:
@@ -81,7 +85,7 @@ modify:
             goto fail;
 
         /* XXX: Check if really a number */
-        action->action.modify.flags = strtoul(token, NULL, 10);
+        action->action.store.flags = strtoul(token, NULL, 10);
         buffer->offset += strlen(token) + 1;
         action->state = COMMAND_PARSE_EXPTIME;
 
@@ -90,7 +94,7 @@ modify:
             goto fail;
 
         /* XXX: Check if really a number */
-        action->action.modify.exptime = strtoul(token, NULL, 10);
+        action->action.store.exptime = strtoul(token, NULL, 10);
         buffer->offset += strlen(token) + 1;
         action->state = COMMAND_PARSE_SIZE;
 
@@ -101,8 +105,8 @@ modify:
 
             *token = '\0';
             token = &buffer->buffer[buffer->offset];
-            action->action.modify.size = strtoul(token, NULL, 10);
-            action->action.modify.noreply = false;
+            action->action.store.size = strtoul(token, NULL, 10);
+            action->action.store.noreply = false;
             buffer->offset += strlen(token) + strlen(COMMAND_PARSE_TERM);
             action->state = COMMAND_PARSE_COMPLETE;
 
@@ -110,7 +114,7 @@ modify:
         }
 
         /* XXX: Check if really a number */
-        action->action.modify.size = strtoul(token, NULL, 10);
+        action->action.store.size = strtoul(token, NULL, 10);
         buffer->offset += strlen(token) + 1;
         action->state = COMMAND_PARSE_NOREPLY;
 
@@ -121,7 +125,7 @@ modify:
         *token = '\0';
         token = &buffer->buffer[buffer->offset];
         if (strncmp(token, "noreply", strlen("noreply")) == 0) {
-            action->action.modify.noreply = true;
+            action->action.store.noreply = true;
             buffer->offset += strlen("noreply") + strlen(COMMAND_PARSE_TERM);
             action->state = COMMAND_PARSE_COMPLETE;
 
@@ -140,9 +144,13 @@ retrieve:
 
         *token = '\0';
         action->action.retrieve.key = &buffer->buffer[buffer->offset];
-        buffer->offset += strlen(action->action.retrieve.key) +
+        action->action.retrieve.keylen = strlen(action->action.retrieve.key);
+        action->action.retrieve.hash = hash(action->action.retrieve.key,
+                                            action->action.retrieve.keylen);
+        buffer->offset += action->action.retrieve.keylen +
                           strlen(COMMAND_PARSE_TERM);
         action->state = COMMAND_PARSE_COMPLETE;
+
 
         goto success;
 
@@ -153,11 +161,11 @@ retrieve:
 success:
 
     if (action->command < COMMAND_MODIFY_MAX) {
-        printf("K: %s\n", action->action.modify.key);
-        printf("F: %d\n", action->action.modify.flags);
-        printf("E: %d\n", action->action.modify.exptime);
-        printf("S: %u\n", action->action.modify.size);
-        printf("N: %s\n", (action->action.modify.noreply == true) ? "true" : "false");
+        printf("K: %s\n", action->action.store.key);
+        printf("F: %d\n", action->action.store.flags);
+        printf("E: %d\n", action->action.store.exptime);
+        printf("S: %u\n", action->action.store.size);
+        printf("N: %s\n", (action->action.store.noreply == true) ? "true" : "false");
     } else {
         printf("K: %s\n", action->action.retrieve.key);
     }

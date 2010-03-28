@@ -15,6 +15,7 @@
 #include "memory.h"
 #include "command.h"
 #include "settings.h"
+#include "cache.h"
 
 
 typedef struct network_buffer {

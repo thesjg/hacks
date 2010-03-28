@@ -138,7 +138,24 @@ buf->buffer[buf->used + 1] = '\0';
                                 if (command_parse(conn) == true)
                                     connections[fd].state = CONNECTION_PARSED_COMMAND;
                             }
-print_buffer(buf);
+
+                            if (connections[fd].state == CONNECTION_PARSED_COMMAND) {
+                                ecached_warn("CONNECTION_PARSED_COMMAND: %d", conn->action.command_type);
+                                switch (conn->action.command_type) {
+                                case COMMAND_TYPE_STORE:
+                                    cache_store(&conn->action, buf);
+                                    break;
+                                case COMMAND_TYPE_RETRIEVE:
+                                    cache_retrieve(&conn->action);
+                                    break;
+                                case COMMAND_TYPE_EXPIRE:
+                                    break;
+                                case COMMAND_TYPE_MODIFY:
+                                    break;
+                                }
+                            }
+
+                            print_buffer(buf);
                         }
 
                     /* EVFILT_WRITE */

@@ -47,17 +47,18 @@ typedef struct memory_zone {
     size_t			allocated;
     uint32_t			bucket_count;
     struct memory_bucket	*buckets;
-} memory_zone_t;
+} *memory_zone_t;
 
 typedef struct memory_bucket {
-    memory_zone_t	*parent_zone;
+    memory_zone_t	parent_zone;
     void		*bucket;
     size_t		offset;
     uint32_t		mask;
-} memory_bucket_t;
+} *memory_bucket_t;
 
 
 void memory_init(ecached_settings_t);
+memory_zone_t memory_get_zone(size_t);
 
 
 #endif /* !_ECACHED_MEMORY_H_ */

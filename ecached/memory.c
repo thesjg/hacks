@@ -1,10 +1,10 @@
 #include "memory.h"
 
 
-static memory_zone_t *zones[MEMORY_ZONES];
+static memory_zone_t zones[MEMORY_ZONES];
 
-static memory_zone_t *memory_zone_create(size_t);
-static bool memory_bucket_allocate(memory_zone_t *);
+static memory_zone_t memory_zone_create(size_t);
+static bool memory_bucket_allocate(memory_zone_t);
 static inline size_t pow8_ceil(size_t);
 
 
@@ -20,17 +20,44 @@ memory_init(ecached_settings_t settings)
     }
 }
 
-static memory_zone_t *
+memory_zone_t
+memory_get_zone(size_t size)
+{
+    size_t zsize = pow8_ceil(size);
+
+    if (zsize <= MEMORY_ZONE_MIN)
+        return (zones[0]);
+
+    if (zsize == (1U<<6))
+        return (zones[1]);
+
+    if (zsize == (1U<<9))
+        return (zones[2]);
+
+    if (zsize == (1U<<12))
+        return (zones[3]);
+
+    if (zsize == (1U<<15))
+        return (zones[4]);
+
+    /* Limit allocations, in the networking code would be preferrable */
+    if (zsize >= MEMORY_ZONE_MAX)
+        return (zones[MEMORY_ZONES - 1]);
+
+    return (NULL);
+}
+
+static memory_zone_t
 memory_zone_create(size_t quantum)
 {
     char tfile[] = "/tmp/ecached.XXXXXXXX";
-    memory_zone_t *zone;
+    memory_zone_t zone;
     int fd;
 
     if ((quantum % 8) != 0)
         ecached_err(EX_SOFTWARE, "Memory zone quantum must be divisible by 8");
 
-    if ((zone = (memory_zone_t *)malloc(sizeof(memory_zone_t))) == NULL)
+    if ((zone = (memory_zone_t)malloc(sizeof(*zone))) == NULL)
         ecached_err(EX_OSERR, "malloc(3) failure");
 
     if ((fd = mkstemp(tfile)) == -1)
@@ -53,12 +80,12 @@ memory_zone_create(size_t quantum)
 }
 
 static bool
-memory_bucket_allocate(memory_zone_t *zone)
+memory_bucket_allocate(memory_zone_t zone)
 {
-    memory_bucket_t *bucket, *buckets;
+    memory_bucket_t bucket, buckets;
     size_t size = zone->allocated + (zone->quantum * MEMORY_BUCKET_SIZE);
 
-    if ((bucket = (memory_bucket_t *)malloc(sizeof(memory_bucket_t))) == NULL)
+    if ((bucket = (memory_bucket_t)malloc(sizeof(*bucket))) == NULL)
         ecached_err(EX_OSERR, "malloc(3) failure");
 
     if (ftruncate(zone->zone_fd, size) == -1)

@@ -15,6 +15,8 @@
 
 typedef hash_keylen_t cache_keylen_t;
 
+struct network_buffer;
+
 typedef struct cache_object_bucket {
     int		fd;
     size_t	offset;
@@ -30,8 +32,7 @@ typedef struct cache_object {
 
 
 void cache_init(ecached_settings_t);
-
 cache_object_t cache_retrieve(command_action_t);
-bool cache_modify(command_action_t, network_buffer_t);
+bool cache_store(command_action_t, struct network_buffer *);
 
 #endif /* !_ECACHED_CACHE_H_ */
