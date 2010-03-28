@@ -18,8 +18,7 @@ cache_retrieve(command_action_t command)
 
     he = hash_search(command->action.store.hash,
                      command->action.store.key,
-                     strlen(command->action.store.key));
-             /* XXX: move strlen calc into proto code? */
+                     command->action.store.keylen);
     if (he == NULL) {
         command->response.retrieve.response = COMMAND_RESPONSE_NOT_FOUND;
         ecached_warn("Attempting retrieval, but key (%s) with hash (%d) not found in hash table",
@@ -46,9 +45,7 @@ cache_store(command_action_t command, network_buffer_t buffer)
 
     he = hash_search(command->action.store.hash,
                      command->action.store.key,
-                     strlen(command->action.store.key));
-             /* XXX: move strlen calc into proto code? */
-
+                     command->action.store.keylen);
     if (he != NULL && cmd == COMMAND_ADD) {
         /* If key is currently in use, add fails */
 
