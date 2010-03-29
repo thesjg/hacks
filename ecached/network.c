@@ -48,8 +48,6 @@ network_main(ecached_settings_t settings)
      */
     bufsize = set_sockbuf_recvsize(fd_listen, (MEMORY_ZONE_MAX >> 2));
 
-printf("BUFSIZE: %d\n", bufsize);
-
     maxfiles = get_maxfiles(); /* XXX: From getopt() */
 
     /**
@@ -94,6 +92,7 @@ printf("BUFSIZE: %d\n", bufsize);
 
                 /* Existing connection */
                 } else {
+printf("New event, existing connection\n");
                     if (events[i].filter == EVFILT_READ) {
                         network_buffer_t buf;
                         network_connection_t conn = &connections[fd];
@@ -105,6 +104,8 @@ printf("BUFSIZE: %d\n", bufsize);
                                 (void)close(fd);
                                 continue;
                             }
+
+memset(conn->buffer+10, '\0', bufsize);
 
                             conn->state = CONNECTION_PARSING_COMMAND;
                             buf = conn->buffer;
@@ -133,20 +134,24 @@ printf("BUFSIZE: %d\n", bufsize);
                         } else {
                             buf->used += rb;
                             if (connections[fd].state == CONNECTION_PARSING_COMMAND) {
-buf->buffer[buf->used + 1] = '\0';
-
                                 if (command_parse(conn) == true)
                                     connections[fd].state = CONNECTION_PARSED_COMMAND;
                             }
 
                             if (connections[fd].state == CONNECTION_PARSED_COMMAND) {
-                                ecached_warn("CONNECTION_PARSED_COMMAND: %d", conn->action.command_type);
+                                cache_object_t co;
+
                                 switch (conn->action.command_type) {
                                 case COMMAND_TYPE_STORE:
-                                    cache_store(&conn->action, buf);
+printf("DOING CACHE_STORE()\n");
+                                    if (cache_store(&conn->action, buf) == true) {
+                                    }
                                     break;
                                 case COMMAND_TYPE_RETRIEVE:
-                                    cache_retrieve(&conn->action);
+printf("DOING CACHE_RETRIEVE()\n");
+                                    if ((co = cache_retrieve(&conn->action)) != NULL) {
+
+                                    }
                                     break;
                                 case COMMAND_TYPE_EXPIRE:
                                     break;

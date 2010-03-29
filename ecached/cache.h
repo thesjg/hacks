@@ -2,6 +2,8 @@
 #define _ECACHED_CACHE_H_
 
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "error.h"
 #include "memory.h"

@@ -98,6 +98,12 @@ store:
         buffer->offset += strlen(token) + 1;
         action->state = COMMAND_PARSE_SIZE;
 
+/*
+ * XXX
+ *
+ * We should one-shot SIZE and NOREPLY
+ */
+
     case COMMAND_PARSE_SIZE:
         if ((token = parse_create_token(buffer)) == NULL) {
             if ((token = parse_find_terminator(buffer)) == NULL)
@@ -113,9 +119,19 @@ store:
             goto success;
         }
 
+        if ((token = parse_find_terminator(buffer)) != NULL) {
+            *token = '\0';
+            token = &buffer->buffer[buffer->offset];
+            action->state = COMMAND_PARSE_COMPLETE;
+        }
+
         /* XXX: Check if really a number */
         action->action.store.size = strtoul(token, NULL, 10);
         buffer->offset += strlen(token) + 1;
+
+        if (action->state == COMMAND_PARSE_COMPLETE)
+            goto success;
+
         action->state = COMMAND_PARSE_NOREPLY;
 
     case COMMAND_PARSE_NOREPLY:
@@ -199,6 +215,6 @@ parse_find_terminator(network_buffer_t buffer)
     return (char *)memmem(&buffer->buffer[buffer->offset],
                           buffer->used - buffer->offset,
                           COMMAND_PARSE_TERM,
-                          strlen(COMMAND_PARSE_TERM) - 1);
+                          strlen(COMMAND_PARSE_TERM));
 }
 

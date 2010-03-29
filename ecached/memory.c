@@ -25,19 +25,21 @@ memory_get_zone(size_t size)
 {
     size_t zsize = pow8_ceil(size);
 
+printf("memory_get_zone: returning zone for size: %d\n", zsize);
+
     if (zsize <= MEMORY_ZONE_MIN)
         return (zones[0]);
 
-    if (zsize == (1U<<6))
+    if (zsize <= (1U<<6))
         return (zones[1]);
 
-    if (zsize == (1U<<9))
+    if (zsize <= (1U<<9))
         return (zones[2]);
 
-    if (zsize == (1U<<12))
+    if (zsize <= (1U<<12))
         return (zones[3]);
 
-    if (zsize == (1U<<15))
+    if (zsize <= (1U<<15))
         return (zones[4]);
 
     /* Limit allocations, in the networking code would be preferrable */

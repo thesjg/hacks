@@ -24,6 +24,7 @@
 #define _ECACHED_MEMORY_H_
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 

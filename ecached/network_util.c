@@ -82,4 +82,8 @@ print_buffer(network_buffer_t buf)
     printf("Buffer @ 0x%x\n", (uintptr_t)buf);
     printf("\tSize: %d of %d\n", buf->used, buf->size);
     printf("\t%s\n", buf->buffer);
+    printf("\t%s\n", buf->buffer+strlen(buf->buffer)+1);
+    printf("\t%s\n", buf->buffer+strlen(buf->buffer)+3);
+    printf("\t%s\n", buf->buffer+strlen(buf->buffer)+5);
+    printf("\t%s\n", buf->buffer+strlen(buf->buffer)+8);
 }

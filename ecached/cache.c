@@ -15,20 +15,24 @@ cache_object_t
 cache_retrieve(command_action_t command)
 {
     hash_entry_t he;
+    cache_object_t co;
 
-    he = hash_search(command->action.store.hash,
-                     command->action.store.key,
-                     command->action.store.keylen);
+    he = hash_search(command->action.retrieve.hash,
+                     command->action.retrieve.key,
+                     command->action.retrieve.keylen);
     if (he == NULL) {
         command->response.retrieve.response = COMMAND_RESPONSE_NOT_FOUND;
-        ecached_warn("Attempting retrieval, but key (%s) with hash (%d) not found in hash table",
-                     command->action.store.key,
-                     command->action.store.hash);
         return (NULL);
     }
 
+    co = (cache_object_t)he->data;
 
-    return (NULL);
+    command->response.retrieve.response = COMMAND_RESPONSE_VALUE;
+    command->response.retrieve.flags = co->flags;
+    command->response.retrieve.size = co->size;
+    command->response.retrieve.cas = 88; /* XXX */
+
+    return (co);
 }
 
 /*
@@ -42,6 +46,9 @@ cache_store(command_action_t command, network_buffer_t buffer)
     command_t cmd = command->command;;
     hash_entry_t he;
     memory_zone_t mz;
+    memory_bucket_t mb;
+    cache_object_t co;
+    int offset, i;
 
     he = hash_search(command->action.store.hash,
                      command->action.store.key,
@@ -53,7 +60,48 @@ cache_store(command_action_t command, network_buffer_t buffer)
         return (true);
     }
 
-    mz = memory_get_zone(command->action.store.size);
+    if ((mz = memory_get_zone(command->action.store.size)) == NULL)
+        return (false);    
+
+    for (i = 0; i < mz->bucket_count; ++i) {
+        mb = &mz->buckets[i];
+
+        /* No free entries, continue to next bucket */
+        if (mb->mask == 0)
+            continue;
+
+        // 1 bucket
+        if ((co = (cache_object_t)malloc(sizeof(*co) + sizeof(cache_object_bucket_t))) == NULL)
+            return (false);
+
+        offset = ffs(mb->mask);
+        mb->mask &= ~(1 << offset);
+
+        memcpy(&buffer->buffer[buffer->offset],
+               &mb->bucket + offset * mz->quantum,
+               command->action.store.size);
+
+        co->size = command->action.store.size;
+        co->flags = command->action.store.flags;
+        co->refcnt = 0;
+        co->buckets = 1;
+        co->data[0].fd = mz->zone_fd;
+        co->data[0].offset = mb->offset + (offset * mz->quantum);
+
+        if (hash_insert(command->action.store.hash,
+                        command->action.store.key,
+                        command->action.store.keylen,
+                        co)) {
+
+            command->response.store.response = COMMAND_RESPONSE_STORED;
+            return (true);
+        }
+
+        command->response.store.response = COMMAND_RESPONSE_NOT_STORED;
+
+//        free(
+//        unset bit
+    }
 
     return (false);
 }
